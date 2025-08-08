@@ -1,0 +1,419 @@
+{
+  "name": "mastro-vscode",
+  "displayName": "Mastro - AI-Powered Git Assistant",
+  "description": "Intelligent Git CLI extension with AI-powered commit messages, code reviews, and productivity analytics",
+  "version": "0.1.0",
+  "publisher": "mastro-ai",
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/mastro.git",
+    "directory": "mastro-vscode"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Productivity",
+    "SCM Providers"
+  ],
+  "keywords": [
+    "git",
+    "ai",
+    "commit",
+    "code-review",
+    "productivity",
+    "analytics"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mastro.generateCommit",
+        "title": "Generate AI Commit Message",
+        "category": "Mastro",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "mastro.reviewSession",
+        "title": "Review Current Session",
+        "category": "Mastro", 
+        "icon": "$(search)"
+      },
+      {
+        "command": "mastro.splitChanges",
+        "title": "Analyze Commit Boundaries",
+        "category": "Mastro",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "mastro.showAnalytics",
+        "title": "Show Productivity Analytics",
+        "category": "Mastro",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "mastro.explainChanges",
+        "title": "Explain Code Changes",
+        "category": "Mastro",
+        "icon": "$(question)"
+      },
+      {
+        "command": "mastro.createPR",
+        "title": "Create Smart PR",
+        "category": "Mastro",
+        "icon": "$(git-pull-request)"
+      },
+      {
+        "command": "mastro.installHooks",
+        "title": "Install Pre-commit Hooks",
+        "category": "Mastro",
+        "icon": "$(shield)"
+      },
+      {
+        "command": "mastro.focusMode",
+        "title": "Enable Focus Mode",
+        "category": "Mastro",
+        "icon": "$(target)"
+      },
+      {
+        "command": "mastro.refreshSession",
+        "title": "Refresh Session Data",
+        "category": "Mastro",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "mastro.qualityCheck",
+        "title": "Run Quality Check",
+        "category": "Mastro",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "mastro.startRealTimeAnalysis",
+        "title": "Start Real-Time Analysis",
+        "category": "Mastro",
+        "icon": "$(play)"
+      },
+      {
+        "command": "mastro.stopRealTimeAnalysis", 
+        "title": "Stop Real-Time Analysis",
+        "category": "Mastro",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "mastro.triggerAnalysis",
+        "title": "Analyze Current File",
+        "category": "Mastro",
+        "icon": "$(search)"
+      },
+      {
+        "command": "mastro.showFileMetrics",
+        "title": "Show File Quality Metrics",
+        "category": "Mastro", 
+        "icon": "$(graph)"
+      },
+      {
+        "command": "mastro.showDevelopmentPatterns",
+        "title": "Show Development Patterns",
+        "category": "Mastro",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "mastro.analyzeFileQuality",
+        "title": "Analyze File Quality",
+        "category": "Mastro",
+        "icon": "$(verified)"
+      },
+      {
+        "command": "mastro.analyzeProjectQuality",
+        "title": "Analyze Project Quality",
+        "category": "Mastro",
+        "icon": "$(project)"
+      },
+      {
+        "command": "mastro.showExtractFunctionHelp",
+        "title": "Extract Function Help",
+        "category": "Mastro",
+        "icon": "$(symbol-method)"
+      },
+      {
+        "command": "mastro.showSimplifyConditionalHelp",
+        "title": "Simplify Conditional Help", 
+        "category": "Mastro",
+        "icon": "$(symbol-boolean)"
+      },
+      {
+        "command": "mastro.showComplexityHelp",
+        "title": "Complexity Help",
+        "category": "Mastro",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "mastro.addDocumentation",
+        "title": "Add Function Documentation",
+        "category": "Mastro",
+        "icon": "$(book)"
+      },
+      {
+        "command": "mastro.createTest",
+        "title": "Create Test File",
+        "category": "Mastro",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "mastro.analyzePerformance",
+        "title": "Analyze Performance",
+        "category": "Mastro",
+        "icon": "$(dashboard)"
+      },
+      {
+        "command": "mastro.triggerSuggestions",
+        "title": "Trigger Proactive Suggestions",
+        "category": "Mastro",
+        "icon": "$(lightbulb)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "mastroSession",
+          "name": "Mastro Session",
+          "when": "mastro.isGitRepository"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "mastroSession",
+        "contents": "No git repository detected.\n[Initialize Repository](command:git.init)\nMastro works best in git repositories with AI-powered analysis.",
+        "when": "!mastro.isGitRepository"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "mastro.generateCommit",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.reviewSession", 
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.splitChanges",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.showAnalytics",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.explainChanges",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.createPR",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.installHooks",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.qualityCheck",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.startRealTimeAnalysis",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.stopRealTimeAnalysis",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.triggerAnalysis",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.showFileMetrics",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.showDevelopmentPatterns",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.analyzeFileQuality",
+          "when": "mastro.isGitRepository"
+        },
+        {
+          "command": "mastro.analyzeProjectQuality",
+          "when": "mastro.isGitRepository"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "mastro.generateCommit",
+          "group": "navigation@1",
+          "when": "scmProvider == git && mastro.hasStaged"
+        },
+        {
+          "command": "mastro.splitChanges",
+          "group": "navigation@2", 
+          "when": "scmProvider == git && mastro.hasChanges"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "mastro.refreshSession",
+          "when": "view == mastroSession",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Mastro",
+      "properties": {
+        "mastro.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable smart notifications for code quality insights"
+        },
+        "mastro.notificationLevel": {
+          "type": "string",
+          "enum": ["minimal", "balanced", "comprehensive"],
+          "default": "balanced",
+          "description": "Level of detail for notifications"
+        },
+        "mastro.autoRefreshSession": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh session data when files change"
+        },
+        "mastro.statusBarEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Mastro status in the status bar"
+        },
+        "mastro.focusModeNotifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow notifications during focus mode"
+        },
+        "mastro.cliPath": {
+          "type": "string",
+          "default": "mastro",
+          "description": "Path to the mastro CLI executable"
+        },
+        "mastro.realTimeAnalysis.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time development guidance and analysis"
+        },
+        "mastro.realTimeAnalysis.debounceInterval": {
+          "type": "number",
+          "default": 3000,
+          "description": "Debounce interval for file change analysis (milliseconds)"
+        },
+        "mastro.realTimeAnalysis.complexityThreshold": {
+          "type": "number",
+          "default": 8,
+          "description": "Complexity threshold for triggering warnings (1-20)"
+        },
+        "mastro.realTimeAnalysis.testCoverageThreshold": {
+          "type": "number",
+          "default": 70,
+          "description": "Test coverage threshold for triggering suggestions (0-100%)"
+        },
+        "mastro.realTimeAnalysis.securityAnalysis": {
+          "type": "boolean", 
+          "default": true,
+          "description": "Enable real-time security pattern analysis"
+        },
+        "mastro.realTimeAnalysis.refactoringOpportunities": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show refactoring opportunities in real-time"
+        },
+        "mastro.realTimeAnalysis.patternDetection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable development pattern detection (TDD, refactoring, etc.)"
+        },
+        "mastro.proactiveSuggestions.enableQuality": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable proactive quality-based suggestions"
+        },
+        "mastro.proactiveSuggestions.enableRefactoring": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable proactive refactoring suggestions"
+        },
+        "mastro.proactiveSuggestions.enablePatterns": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable proactive development pattern suggestions"
+        },
+        "mastro.proactiveSuggestions.enableTesting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable proactive testing suggestions"
+        },
+        "mastro.proactiveSuggestions.enableSecurity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable proactive security suggestions"
+        },
+        "mastro.proactiveSuggestions.maxActive": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum number of active suggestions to show simultaneously"
+        },
+        "mastro.proactiveSuggestions.minPriority": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "default": "low",
+          "description": "Minimum priority level for suggestions to be shown"
+        },
+        "mastro.proactiveSuggestions.cooldownMs": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "description": "Cooldown period between suggestions in milliseconds"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "deploy": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "typescript": "^5.1.6",
+    "@vscode/test-electron": "^2.3.4",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2"
+  }
+}

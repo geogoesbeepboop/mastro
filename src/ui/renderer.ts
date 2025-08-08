@@ -265,14 +265,6 @@ export class UIRenderer {
     return output.join('\n');
   }
 
-  renderWarning(message: string): string {
-    if (!this.config.ui.colors) {
-      return `Warning: ${message}`;
-    }
-
-    return `${chalk.yellow('⚠️  Warning:')} ${message}`;
-  }
-
   renderSuccess(message: string): string {
     if (!this.config.ui.colors) {
       return message;
@@ -377,7 +369,7 @@ export class UIRenderer {
     return color(`${percent}%`);
   }
 
-  private renderRisk(risk: string): string {
+  renderRisk(risk: string): string {
     const colors = {
       low: chalk.green,
       medium: chalk.yellow,
@@ -430,5 +422,65 @@ export class UIRenderer {
     }
     
     return output.join('\n');
+  }
+
+  // New methods for commit boundary analysis
+
+  renderTitle(title: string): string {
+    if (!this.config.ui.colors) {
+      return `${title}\n${'='.repeat(title.length)}`;
+    }
+    return chalk.cyan.bold(title) + '\n' + chalk.gray('─'.repeat(50));
+  }
+
+  renderSection(title: string, items: string[]): string {
+    const output: string[] = [];
+    
+    if (!this.config.ui.colors) {
+      output.push(`\n${title}:`);
+      items.forEach(item => output.push(`  ${item}`));
+      return output.join('\n');
+    }
+
+    output.push('\n' + chalk.white.bold(title));
+    items.forEach(item => {
+      output.push(`  ${chalk.gray('•')} ${item}`);
+    });
+    
+    return output.join('\n');
+  }
+
+  renderHighlight(text: string): string {
+    if (!this.config.ui.colors) {
+      return text;
+    }
+    return chalk.yellow.bold(text);
+  }
+
+  renderMuted(text: string): string {
+    if (!this.config.ui.colors) {
+      return text;
+    }
+    return chalk.gray(text);
+  }
+
+  renderPriority(priority: 'high' | 'medium' | 'low'): string {
+    if (!this.config.ui.colors) {
+      return priority.toUpperCase();
+    }
+
+    const colors = {
+      high: chalk.red,
+      medium: chalk.yellow,
+      low: chalk.green
+    };
+    return colors[priority](priority.toUpperCase());
+  }
+
+  renderWarning(text: string): string {
+    if (!this.config.ui.colors) {
+      return `WARNING: ${text}`;
+    }
+    return chalk.yellow.bold(`⚠️ ${text}`);
   }
 }

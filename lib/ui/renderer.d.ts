@@ -7,7 +7,6 @@ export declare class UIRenderer {
     renderPRDescription(pr: PRDescription): string;
     renderCodeReview(review: CodeReview): string;
     renderError(message: string, details?: string): string;
-    renderWarning(message: string): string;
     renderSuccess(message: string): string;
     renderInfo(message: string): string;
     private renderCommitMessagePlain;
@@ -16,9 +15,15 @@ export declare class UIRenderer {
     private renderCodeReviewPlain;
     private getTypeColor;
     private renderConfidence;
-    private renderRisk;
+    renderRisk(risk: string): string;
     private renderScope;
     private renderRating;
     private renderSuggestion;
+    renderTitle(title: string): string;
+    renderSection(title: string, items: string[]): string;
+    renderHighlight(text: string): string;
+    renderMuted(text: string): string;
+    renderPriority(priority: 'high' | 'medium' | 'low'): string;
+    renderWarning(text: string): string;
 }
 //# sourceMappingURL=renderer.d.ts.map

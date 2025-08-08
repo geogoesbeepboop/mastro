@@ -20,5 +20,6 @@ export declare class GitAnalyzer {
     private getChangeType;
     private getHunks;
     private parseDiffHunks;
+    parseDiffForFile(diff: string, file: string, type: GitChange['type']): GitChange;
 }
 //# sourceMappingURL=git-analyzer.d.ts.map

@@ -1,0 +1,39 @@
+import { BaseCommand } from '../base/command.js';
+export default class Review extends BaseCommand {
+    static description: string;
+    static examples: string[];
+    static flags: {
+        persona: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        strictness: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        format: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        scope: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        interactive: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        stream: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'actionable-only': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        priority: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        config: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        verbose: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'no-cache': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'dry-run': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+    };
+    private sessionTracker;
+    private reviewEngine;
+    private streamingClient;
+    private streamingRenderer;
+    private loadingManager;
+    run(): Promise<void>;
+    private getOrCreateSession;
+    private displaySessionOverview;
+    private createReviewPersona;
+    private performStreamingReview;
+    private performStandardReview;
+    private outputResults;
+    private outputJSON;
+    private outputMarkdown;
+    private outputTerminal;
+    private outputActionableItemsOnly;
+    private enterInteractiveMode;
+    private getPriorityWeight;
+    private getPriorityIcon;
+}
+//# sourceMappingURL=review.d.ts.map

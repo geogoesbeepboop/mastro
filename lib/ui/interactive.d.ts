@@ -14,6 +14,10 @@ export declare class InteractiveUI {
     getTextInput(prompt: string, defaultValue?: string): Promise<string | null>;
     showProgressiveEnhancement(initialMessage: CommitMessage, enhancedMessage: CommitMessage, onSelect: (message: CommitMessage) => void): Promise<void>;
     cleanup(): void;
+    /**
+     * Select from a list of options and return the selected index
+     */
+    selectIndex(message: string, options: string[]): Promise<number>;
 }
 export declare function createRefinementSuggestions(type: 'commit' | 'explanation' | 'pr' | 'review'): string[];
 export {};

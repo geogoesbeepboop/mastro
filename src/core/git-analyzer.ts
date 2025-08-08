@@ -392,4 +392,30 @@ export class GitAnalyzer {
 
     return hunks;
   }
+
+  parseDiffForFile(diff: string, file: string, type: GitChange['type']): GitChange {
+    const hunks = this.parseDiffHunks(diff);
+    
+    // Calculate insertions and deletions from hunks
+    let insertions = 0;
+    let deletions = 0;
+    
+    for (const hunk of hunks) {
+      for (const line of hunk.lines) {
+        if (line.type === 'added') {
+          insertions++;
+        } else if (line.type === 'removed') {
+          deletions++;
+        }
+      }
+    }
+
+    return {
+      file,
+      type,
+      insertions,
+      deletions,
+      hunks
+    };
+  }
 }

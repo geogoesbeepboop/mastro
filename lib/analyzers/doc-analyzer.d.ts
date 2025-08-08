@@ -1,0 +1,43 @@
+import type { ProjectStructure, CodeAnalysis } from '../types/index.js';
+export declare class DocumentationAnalyzer {
+    private workingDir;
+    analyzeProjectStructure(workingDir: string): Promise<ProjectStructure>;
+    analyzeCodebase(projectStructure: ProjectStructure): Promise<CodeAnalysis>;
+    private scanDirectories;
+    private scanFiles;
+    private analyzeFile;
+    private getDirectoryFiles;
+    private classifyDirectoryType;
+    private getDirectoryDescription;
+    private classifyFileType;
+    private getLanguageFromExtension;
+    private extractExports;
+    private extractImports;
+    private extractFunctions;
+    private extractClasses;
+    private extractApiEndpoints;
+    private detectFrameworkFromContent;
+    private calculateProjectComplexity;
+    private detectArchitecturalPatterns;
+    private analyzeDependencies;
+    private extractUserFlows;
+    private extractDataModels;
+    private identifyEntryPoints;
+    private identifyConfigFiles;
+    private identifyTestFiles;
+    private identifyDocFiles;
+    private determineExportType;
+    private extractSignature;
+    private extractImportNames;
+    private estimateFunctionComplexity;
+    private extractFunctionBody;
+    private extractClassMethods;
+    private extractClassProperties;
+    private extractMethodFromPattern;
+    private extractEndpointDescription;
+    private generateComplexityRecommendations;
+    private getDependencyType;
+    private guessDependencyPurpose;
+    private isDependencyCritical;
+}
+//# sourceMappingURL=doc-analyzer.d.ts.map

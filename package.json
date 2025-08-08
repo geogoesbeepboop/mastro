@@ -1,0 +1,99 @@
+{
+  "name": "mastro",
+  "version": "0.1.0",
+  "description": "AI-powered Git CLI extension for intelligent commit messages, PR descriptions, and code reviews",
+  "author": "Your Name",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "bin": {
+    "mastro": "./bin/run.js"
+  },
+  "type": "module",
+  "files": [
+    "/bin",
+    "/lib",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "npm run lint",
+    "prepack": "npm run build && oclif manifest && oclif readme",
+    "test": "vitest",
+    "version": "oclif readme && git add README.md",
+    "start": "node lib/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "git",
+    "ai",
+    "cli",
+    "commit",
+    "pr",
+    "code-review",
+    "developer-tools"
+  ],
+  "dependencies": {
+    "@oclif/core": "^3.26.5",
+    "@oclif/plugin-help": "^6.0.21",
+    "@oclif/plugin-plugins": "^4.3.9",
+    "chalk": "^5.3.0",
+    "cosine-similarity": "^1.0.1",
+    "dotenv": "^17.2.1",
+    "glob": "^10.3.10",
+    "ignore": "^5.3.1",
+    "ink": "^4.4.1",
+    "node-cache": "^5.1.2",
+    "openai": "^4.28.4",
+    "ora": "^8.0.1",
+    "react": "^18.2.0",
+    "semver": "^7.6.0",
+    "simple-git": "^3.22.0",
+    "yaml": "^2.4.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.69",
+    "@types/semver": "^7.5.8",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "eslint": "^8.57.0",
+    "eslint-config-oclif": "^5.1.2",
+    "eslint-config-oclif-typescript": "^3.1.7",
+    "oclif": "^4.6.2",
+    "shx": "^0.3.4",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.3",
+    "vitest": "^1.4.0"
+  },
+  "oclif": {
+    "bin": "mastro",
+    "dirname": "mastro",
+    "commands": "./lib/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": ":",
+    "topics": {
+      "commit": {
+        "description": "Generate intelligent commit messages"
+      },
+      "explain": {
+        "description": "Explain code changes and diffs"
+      },
+      "pr": {
+        "description": "Create and review pull requests"
+      },
+      "config": {
+        "description": "Manage configuration settings"
+      }
+    }
+  }
+}

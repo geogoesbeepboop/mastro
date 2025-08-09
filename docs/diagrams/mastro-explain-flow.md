@@ -283,13 +283,13 @@ graph TB
     Error code: 0`"]
     
     %% Styling
-    classDef userClass fill:#e1f5fe
-    classDef commandClass fill:#fff3e0
-    classDef processClass fill:#f3e5f5
-    classDef gitClass fill:#e8f5e8
-    classDef aiClass fill:#fff9c4
-    classDef errorClass fill:#ffebee
-    classDef successClass fill:#e8f5e8
+    classDef userClass fill:#e1f5fe,color:#000000
+    classDef commandClass fill:#fff3e0,color:#000000
+    classDef processClass fill:#f3e5f5,color:#000000
+    classDef gitClass fill:#e8f5e8,color:#000000
+    classDef aiClass fill:#fff9c4,color:#000000
+    classDef errorClass fill:#ffebee,color:#000000
+    classDef successClass fill:#e8f5e8,color:#000000
     
     class User,CLI userClass
     class ExplainCmd,Init commandClass
@@ -298,6 +298,7 @@ graph TB
     class TokenOpt,PromptBuild,AICall,PersonaPrompt,ParseExplanation aiClass
     class Error1,AIError,ErrorHandler,KeyError,OtherError errorClass
     class Complete successClass
+
 ```
 
 ## Advanced Analysis Patterns

@@ -359,14 +359,14 @@ graph TB
     Error code: 1`"]
     
     %% Styling
-    classDef userClass fill:#e1f5fe
-    classDef commandClass fill:#fff3e0
-    classDef sessionClass fill:#f3e5f5
-    classDef analysisClass fill:#e8f5e8
-    classDef aiClass fill:#fff9c4
-    classDef outputClass fill:#f1f8e9
-    classDef errorClass fill:#ffebee
-    classDef successClass fill:#e8f5e8
+    classDef userClass fill:#e1f5fe,color:#000000
+    classDef commandClass fill:#fff3e0,color:#000000
+    classDef sessionClass fill:#f3e5f5,color:#000000
+    classDef analysisClass fill:#e8f5e8,color:#000000
+    classDef aiClass fill:#fff9c4,color:#000000
+    classDef outputClass fill:#f1f8e9,color:#000000
+    classDef errorClass fill:#ffebee,color:#000000
+    classDef successClass fill:#e8f5e8,color:#000000
     
     class User,CLI userClass
     class ReviewCmd,Init commandClass
@@ -376,6 +376,7 @@ graph TB
     class FormatSelection,TerminalFormat,MarkdownFormat,JSONFormat,HTMLFormat outputClass
     class Error1,AIError,ErrorHandler errorClass
     class Complete,Cleanup successClass
+
 ```
 
 ## Session Tracking Architecture

@@ -407,14 +407,14 @@ graph TB
     Process completed successfully`"]
     
     %% Styling
-    classDef userClass fill:#e1f5fe
-    classDef commandClass fill:#fff3e0
-    classDef validationClass fill:#f3e5f5
-    classDef detectionClass fill:#e8f5e8
-    classDef aiClass fill:#fff9c4
-    classDef outputClass fill:#f1f8e9
-    classDef errorClass fill:#ffebee
-    classDef successClass fill:#e8f5e8
+    classDef userClass fill:#e1f5fe,color:#000000
+    classDef commandClass fill:#fff3e0,color:#000000
+    classDef validationClass fill:#f3e5f5,color:#000000
+    classDef detectionClass fill:#e8f5e8,color:#000000
+    classDef aiClass fill:#fff9c4,color:#000000
+    classDef outputClass fill:#f1f8e9,color:#000000
+    classDef errorClass fill:#ffebee,color:#000000
+    classDef successClass fill:#e8f5e8,color:#000000
     
     class User,CLI userClass
     class PRCmd,ComponentInit commandClass
@@ -424,6 +424,7 @@ graph TB
     class OutputFormat,TerminalOutput,MarkdownOutput,JSONOutput outputClass
     class Error1,BranchError,NoChangesError,AIGenError,ErrorHandler errorClass
     class Success,Cleanup successClass
+
 ```
 
 ## PR Template System Architecture

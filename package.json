@@ -24,7 +24,8 @@
     "prepack": "npm run build && oclif manifest && oclif readme",
     "test": "vitest",
     "version": "oclif readme && git add README.md",
-    "start": "node lib/index.js"
+    "start": "node lib/index.js",
+    "fix-diagrams": "ts-node scripts/mermaid-contrast-fix.ts ./docs/diagrams"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -58,7 +59,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
+    "@types/node": "^20.19.10",
     "@types/react": "^18.2.69",
     "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
@@ -68,8 +69,9 @@
     "eslint-config-oclif-typescript": "^3.1.7",
     "oclif": "^4.6.2",
     "shx": "^0.3.4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.3",
+    "typescript": "^5.9.2",
     "vitest": "^1.4.0"
   },
   "oclif": {

@@ -240,12 +240,12 @@ graph TB
     Complete --> Exit
     
     %% Styling
-    classDef userClass fill:#e1f5fe
-    classDef commandClass fill:#fff3e0
-    classDef processClass fill:#f3e5f5
-    classDef aiClass fill:#e8f5e8
-    classDef errorClass fill:#ffebee
-    classDef successClass fill:#e8f5e8
+    classDef userClass fill:#e1f5fe,color:#000000
+    classDef commandClass fill:#fff3e0,color:#000000
+    classDef processClass fill:#f3e5f5,color:#000000
+    classDef aiClass fill:#e8f5e8,color:#000000
+    classDef errorClass fill:#ffebee,color:#000000
+    classDef successClass fill:#e8f5e8,color:#000000
     
     class User,CLI userClass
     class CommitCmd,Init,Components commandClass
@@ -253,6 +253,7 @@ graph TB
     class AIRequest,Persona,PromptBuild,OpenAICall,ParseResponse aiClass
     class Error1,Error2,AIError,CommitError,ErrorHandler errorClass
     class Complete,Success successClass
+
 ```
 
 ## Component Interaction Details

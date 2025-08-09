@@ -415,6 +415,288 @@ interface SessionPattern {
 }
 ```
 
+## 📚 Documentation Engine Types
+
+### `DocumentationType`
+Types of documentation that can be generated.
+
+```typescript
+type DocumentationType = 'api' | 'architecture' | 'user-guide' | 'readme' | 'component' | 'deployment';
+```
+
+### `DocumentationConfig`
+Configuration object for documentation generation.
+
+```typescript
+interface DocumentationConfig {
+  outputDirectory: string;
+  types: DocumentationType[];
+  templates: Record<DocumentationType, string>;
+  includePrivate: boolean;
+  includeTodos: boolean;
+  generateMermaid: boolean;
+  autoUpdate: boolean;
+}
+```
+
+**Usage:**
+```typescript
+const config: DocumentationConfig = {
+  outputDirectory: './docs',
+  types: ['api', 'architecture', 'user-guide'],
+  templates: {
+    'api': 'default-api-template',
+    'architecture': 'default-arch-template',
+    'user-guide': 'default-guide-template'
+  },
+  includePrivate: false,
+  includeTodos: false,
+  generateMermaid: true,
+  autoUpdate: false
+};
+```
+
+### `DocumentationOutput`
+Generated documentation with metadata.
+
+```typescript
+interface DocumentationOutput {
+  type: DocumentationType;
+  title: string;
+  content: string;
+  filePath: string;
+  sections?: DocumentationSection[];
+  diagrams?: MermaidDiagram[];
+  references?: string[];
+}
+```
+
+### `DocumentationSection`
+Individual section within generated documentation.
+
+```typescript
+interface DocumentationSection {
+  title: string;
+  content: string;
+  level: number;  // Header level (1-6)
+}
+```
+
+### `MermaidDiagram`
+Mermaid diagram embedded in documentation.
+
+```typescript
+interface MermaidDiagram {
+  type: 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';
+  title: string;
+  description: string;
+  content: string;
+}
+```
+
+### `DocumentationContext`
+Complete context for documentation generation.
+
+```typescript
+interface DocumentationContext {
+  repository: RepoContext;
+  projectStructure: ProjectStructure;
+  codeAnalysis: CodeAnalysis;
+  workingDir: string;
+}
+```
+
+### `ProjectStructure`
+Analyzed project structure for documentation.
+
+```typescript
+interface ProjectStructure {
+  directories: DirectoryInfo[];
+  files: FileInfo[];
+  entryPoints: string[];
+  configFiles: string[];
+  testFiles: string[];
+  docFiles: string[];
+}
+```
+
+### `DirectoryInfo`
+Information about project directories.
+
+```typescript
+interface DirectoryInfo {
+  path: string;
+  type: 'source' | 'test' | 'config' | 'docs' | 'build' | 'assets';
+  files: string[];
+  description?: string;
+}
+```
+
+### `FileInfo`
+Detailed file analysis for documentation generation.
+
+```typescript
+interface FileInfo {
+  path: string;
+  type: 'source' | 'test' | 'config' | 'docs' | 'build';
+  language: string;
+  framework?: string;
+  exports: ExportInfo[];
+  imports: ImportInfo[];
+  functions: FunctionInfo[];
+  classes: ClassInfo[];
+  apis: ApiEndpoint[];
+}
+```
+
+### `ExportInfo`
+Information about exported functions, classes, or variables.
+
+```typescript
+interface ExportInfo {
+  name: string;
+  type: 'function' | 'class' | 'variable' | 'interface' | 'type';
+  isDefault: boolean;
+  signature?: string;
+}
+```
+
+### `ImportInfo`
+Information about file imports and dependencies.
+
+```typescript
+interface ImportInfo {
+  module: string;
+  imports: string[];
+  isLocalImport: boolean;
+  usage: string[];
+}
+```
+
+### `FunctionInfo`
+Detailed function analysis for API documentation.
+
+```typescript
+interface FunctionInfo {
+  name: string;
+  signature: string;
+  isAsync: boolean;
+  complexity: 'low' | 'medium' | 'high';
+}
+```
+
+### `ClassInfo`
+Class structure for component documentation.
+
+```typescript
+interface ClassInfo {
+  name: string;
+  methods: string[];
+  properties: string[];
+  extends?: string;
+  implements?: string[];
+}
+```
+
+### `ApiEndpoint`
+REST API endpoint information.
+
+```typescript
+interface ApiEndpoint {
+  path: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  handler: string;
+  description?: string;
+  parameters?: Array<{
+    name: string;
+    dataType: string;
+    required: boolean;
+    description?: string;
+  }>;
+  responses?: Array<{
+    status: number;
+    description: string;
+  }>;
+}
+```
+
+### `CodeAnalysis`
+Comprehensive code analysis results.
+
+```typescript
+interface CodeAnalysis {
+  complexity: ProjectComplexity;
+  patterns: ArchitecturalPattern[];
+  dependencies: DependencyInfo[];
+  userFlows: UserFlow[];
+  dataModels: DataModel[];
+}
+```
+
+### `ProjectComplexity`
+Project complexity assessment for documentation planning.
+
+```typescript
+interface ProjectComplexity {
+  overall: 'simple' | 'moderate' | 'complex' | 'enterprise';
+  metrics: {
+    totalFiles: number;
+    totalLines: number;
+    cyclomaticComplexity: number;
+    dependencyDepth: number;
+    apiEndpoints: number;
+  };
+  recommendations: string[];
+}
+```
+
+### `ArchitecturalPattern`
+Detected architectural patterns for documentation.
+
+```typescript
+interface ArchitecturalPattern {
+  name: string;
+  type: string;
+  confidence: number;  // 0-1
+  evidence: string[];
+  components: string[];
+}
+```
+
+### `DataModel`
+Database/data model information.
+
+```typescript
+interface DataModel {
+  name: string;
+  type: 'entity' | 'dto' | 'schema' | 'interface';
+  fields: Array<{
+    name: string;
+    type: string;
+    required: boolean;
+  }>;
+  relationships: string[];
+  file: string;
+}
+```
+
+### `UserFlow`
+User workflow analysis for documentation.
+
+```typescript
+interface UserFlow {
+  name: string;
+  steps: Array<{
+    action: string;
+    component: string;
+    description: string;
+  }>;
+  entryPoints: string[];
+  exitPoints: string[];
+  complexity: 'simple' | 'moderate' | 'complex';
+}
+```
+
 ## 🧩 Phase 4A: Smart Commit Splitting Types
 
 ### `CommitBoundary`
@@ -713,7 +995,121 @@ interface HooksFlags {
 type HookAction = 'install' | 'uninstall' | 'validate' | 'status' | 'configure';
 ```
 
+### `mastro docs` - Documentation Generation
+AI-powered comprehensive documentation generation.
+
+```typescript
+interface DocsFlags {
+  'output-dir': string;                // Output directory for documentation files
+  'include-private': boolean;          // Include private functions and classes
+  'include-todos': boolean;            // Include TODO comments in documentation
+  'generate-mermaid': boolean;         // Generate mermaid diagrams for architecture
+  'auto-update': boolean;              // Enable automatic documentation updates
+  template: string;                    // Custom template directory to use
+  format: 'markdown' | 'json' | 'html'; // Output format
+}
+
+// Documentation Actions
+type DocsAction = 'generate' | 'api' | 'architecture' | 'user-guide';
+```
+
+### `mastro docs api`
+Generate comprehensive API documentation with OpenAPI support.
+
+```typescript
+interface DocsApiFlags {
+  'output-dir': string;                // Output directory for API documentation
+  'include-private': boolean;          // Include private functions and methods
+  'include-internal': boolean;         // Include internal APIs in documentation
+  'group-by': 'file' | 'method' | 'tag' | 'none'; // Group API endpoints by criteria
+  'include-examples': boolean;         // Generate usage examples for API endpoints
+  format: 'markdown' | 'json' | 'openapi'; // Output format for API documentation
+  'base-url': string;                  // Base URL for API endpoints (for examples)
+}
+```
+
+### `mastro docs architecture`
+Generate system architecture documentation with diagrams.
+
+```typescript
+interface DocsArchitectureFlags {
+  'output-dir': string;                // Output directory for architecture docs
+  'include-patterns': boolean;         // Include detected architectural patterns
+  'generate-diagrams': boolean;        // Generate mermaid architecture diagrams
+  'dependency-analysis': boolean;      // Include dependency analysis
+  format: 'markdown' | 'json' | 'html'; // Output format
+}
+```
+
 ## 🔧 Plugin Development
+
+### `DocumentationEngine` Class
+Core engine for generating documentation.
+
+```typescript
+class DocumentationEngine {
+  constructor(config: MastroConfig, aiClient: AIClient);
+  
+  async generateDocumentation(
+    type: DocumentationType,
+    context: DocumentationContext,
+    config: DocumentationConfig
+  ): Promise<DocumentationOutput>;
+}
+```
+
+**Usage:**
+```typescript
+const docEngine = new DocumentationEngine(mastroConfig, aiClient);
+const apiDoc = await docEngine.generateDocumentation('api', context, config);
+```
+
+### `DocumentationAnalyzer` Class
+Project structure and code analysis for documentation.
+
+```typescript
+class DocumentationAnalyzer {
+  async analyzeProjectStructure(workingDir: string): Promise<ProjectStructure>;
+  async analyzeCodebase(projectStructure: ProjectStructure): Promise<CodeAnalysis>;
+}
+```
+
+**Usage:**
+```typescript
+const analyzer = new DocumentationAnalyzer();
+const structure = await analyzer.analyzeProjectStructure('/path/to/project');
+const analysis = await analyzer.analyzeCodebase(structure);
+```
+
+### `FileSystemManager` Class
+Manages writing documentation files to disk.
+
+```typescript
+class FileSystemManager {
+  constructor(outputDirectory: string);
+  async writeDocumentation(output: DocumentationOutput): Promise<void>;
+}
+```
+
+### Creating Custom Documentation Templates
+
+```typescript
+interface DocumentationTemplate {
+  name: string;
+  type: DocumentationType;
+  render(context: DocumentationContext): Promise<string>;
+}
+
+class CustomApiTemplate implements DocumentationTemplate {
+  name = 'custom-api-template';
+  type = 'api' as const;
+  
+  async render(context: DocumentationContext): Promise<string> {
+    // Custom template implementation
+    return `# Custom API Documentation\n${content}`;
+  }
+}
+```
 
 ### Creating Custom AI Providers
 

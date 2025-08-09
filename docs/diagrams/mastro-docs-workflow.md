@@ -7,6 +7,7 @@ This diagram illustrates the comprehensive documentation generation workflow in 
 ## High-Level Documentation Workflow
 
 ```mermaid
+
 flowchart TD
     A[mastro docs command] --> B{Documentation Type?}
     
@@ -46,15 +47,17 @@ flowchart TD
     
     U --> V[Generated Documentation]
     
-    style A fill:#e1f5fe
-    style K fill:#f3e5f5
-    style L fill:#fff3e0
-    style V fill:#e8f5e8
+    style A fill:#e1f5fe color:#000000
+    style K fill:#f3e5f5 color:#000000
+    style L fill:#fff3e0 color:#000000
+    style V fill:#e8f5e8 color:#000000
+
 ```
 
 ## Detailed Analysis Pipeline
 
 ```mermaid
+
 flowchart TB
     subgraph "Input Analysis"
         A1[Project Root] --> A2[Directory Scanner]
@@ -93,12 +96,13 @@ flowchart TB
     D3 --> E
     D4 --> E
     
-    style B1 fill:#e3f2fd
-    style B2 fill:#e3f2fd
-    style B3 fill:#e3f2fd
-    style B4 fill:#e3f2fd
-    style B5 fill:#e3f2fd
-    style E fill:#f3e5f5
+    style B1 fill:#e3f2fd color:#000000
+    style B2 fill:#e3f2fd color:#000000
+    style B3 fill:#e3f2fd color:#000000
+    style B4 fill:#e3f2fd color:#000000
+    style B5 fill:#e3f2fd color:#000000
+    style E fill:#f3e5f5 color:#000000
+
 ```
 
 ## AI-Powered Content Generation
@@ -130,6 +134,7 @@ sequenceDiagram
 ## Multi-Format Output Generation
 
 ```mermaid
+
 flowchart LR
     subgraph "Content Generation"
         A[Documentation Context] --> B[Content Templates]
@@ -168,14 +173,16 @@ flowchart LR
     P --> R
     Q --> R
     
-    style A fill:#e1f5fe
-    style D fill:#fff3e0
-    style R fill:#e8f5e8
+    style A fill:#e1f5fe color:#000000
+    style D fill:#fff3e0 color:#000000
+    style R fill:#e8f5e8 color:#000000
+
 ```
 
 ## Integration with Existing Mastro Components
 
 ```mermaid
+
 flowchart TB
     subgraph "Existing Mastro Infrastructure"
         A1[AI Client] --> B1[Documentation Engine]
@@ -211,15 +218,17 @@ flowchart TB
         E --> F3[Team Workflows]
     end
     
-    style B1 fill:#f3e5f5
-    style C1 fill:#e3f2fd
-    style C2 fill:#e3f2fd
-    style E fill:#e8f5e8
+    style B1 fill:#f3e5f5 color:#000000
+    style C1 fill:#e3f2fd color:#000000
+    style C2 fill:#e3f2fd color:#000000
+    style E fill:#e8f5e8 color:#000000
+
 ```
 
 ## File Structure and Templates
 
 ```mermaid
+
 flowchart LR
     subgraph "Input Project"
         A1[src/] --> A2[TypeScript Files]
@@ -259,13 +268,14 @@ flowchart LR
         E --> G[diagrams/]
     end
     
-    style C1 fill:#fff3e0
-    style C2 fill:#fff3e0
-    style C3 fill:#fff3e0
-    style C4 fill:#fff3e0
-    style E fill:#e8f5e8
-    style F fill:#e8f5e8
-    style G fill:#e8f5e8
+    style C1 fill:#fff3e0 color:#000000
+    style C2 fill:#fff3e0 color:#000000
+    style C3 fill:#fff3e0 color:#000000
+    style C4 fill:#fff3e0 color:#000000
+    style E fill:#e8f5e8 color:#000000
+    style F fill:#e8f5e8 color:#000000
+    style G fill:#e8f5e8 color:#000000
+
 ```
 
 ## Command Flow and User Experience
@@ -297,6 +307,7 @@ journey
 ## Performance and Caching Strategy
 
 ```mermaid
+
 flowchart TD
     A[Documentation Request] --> B{Cache Check}
     
@@ -323,9 +334,10 @@ flowchart TD
         O --> P[Intelligent Invalidation]
     end
     
-    style B fill:#e1f5fe
-    style F fill:#fff3e0
-    style L fill:#e8f5e8
+    style B fill:#e1f5fe color:#000000
+    style F fill:#fff3e0 color:#000000
+    style L fill:#e8f5e8 color:#000000
+
 ```
 
 ---

@@ -10,6 +10,7 @@ export declare class AIClient {
     private provider;
     constructor(config: AIConfig);
     generateCommitMessage(context: CommitContext): Promise<CommitMessage>;
+    refineCommitMessage(originalMessage: CommitMessage, refinementInstruction: string, context: CommitContext): Promise<CommitMessage>;
     explainChanges(context: CommitContext): Promise<DiffExplanation>;
     createPRDescription(context: CommitContext): Promise<PRDescription>;
     reviewCode(context: CommitContext, persona: ReviewPersona): Promise<CodeReview>;

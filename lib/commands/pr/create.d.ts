@@ -35,6 +35,11 @@ export default class PRCreate extends BaseCommand {
     private outputTerminalPR;
     private outputMarkdownPR;
     private createActualPR;
+    private getRemoteRepositoryInfo;
+    private createGitHubPR;
+    private createGitLabPR;
+    private formatPRBodyForGitHub;
+    private formatPRBodyForGitLab;
     private confirm;
 }
 //# sourceMappingURL=create.d.ts.map

@@ -163,12 +163,35 @@ export default class PRCreate extends BaseCommand {
     this.startSpinner(`Pushing branch ${branch}...`);
     
     try {
-      // This would integrate with git commands
-      // For now, just simulate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if remote exists and get remote info
+      const git = (this.gitAnalyzer as any).git;
+      const remotes = await git.getRemotes(true);
+      
+      if (remotes.length === 0) {
+        this.stopSpinner(false, 'No git remotes configured');
+        throw new Error('No git remotes found. Please add a remote repository first.');
+      }
+      
+      const origin = remotes.find((remote: any) => remote.name === 'origin') || remotes[0];
+      this.updateSpinner(`Pushing to ${origin.name}/${branch}...`);
+      
+      // Push the branch to remote
+      await git.push(origin.name, branch, ['--set-upstream']);
+      
       this.stopSpinner(true, `Branch ${branch} pushed successfully`);
     } catch (error) {
       this.stopSpinner(false, 'Failed to push branch');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('authentication')) {
+          this.log('Authentication failed. Please check your git credentials.', 'error');
+        } else if (error.message.includes('rejected')) {
+          this.log('Push rejected. Try pulling latest changes first.', 'error');
+        } else {
+          this.log(`Push failed: ${error.message}`, 'error');
+        }
+      }
+      
       throw error;
     }
   }
@@ -542,17 +565,197 @@ export default class PRCreate extends BaseCommand {
   private async createActualPR(prDescription: any, context: SmartPRContext, flags: any): Promise<void> {
     this.log('\n🚀 Creating PR...');
     
-    // This would integrate with GitHub/GitLab APIs
-    // For now, show what would happen
-    this.log(`Would create PR: ${flags['head-branch']} → ${flags['base-branch']}`);
-    this.log(`Title: ${prDescription.title}`);
-    this.log(`Draft: ${flags.draft}`);
+    try {
+      // Detect repository type and create PR accordingly
+      const remoteInfo = await this.getRemoteRepositoryInfo();
+      
+      if (remoteInfo.provider === 'github') {
+        await this.createGitHubPR(prDescription, context, flags, remoteInfo);
+      } else if (remoteInfo.provider === 'gitlab') {
+        await this.createGitLabPR(prDescription, context, flags, remoteInfo);
+      } else {
+        throw new Error(`Unsupported repository provider: ${remoteInfo.provider}. Only GitHub and GitLab are currently supported.`);
+      }
+      
+    } catch (error) {
+      this.log('✗ Failed to create PR', 'error');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('gh: command not found')) {
+          this.log('GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/', 'error');
+        } else if (error.message.includes('glab: command not found')) {
+          this.log('GitLab CLI (glab) is not installed. Please install it from https://glab.readthedocs.io/', 'error');
+        } else if (error.message.includes('authentication')) {
+          this.log('Authentication failed. Please run `gh auth login` or `glab auth login` first.', 'error');
+        } else {
+          this.log(`PR creation failed: ${error.message}`, 'error');
+        }
+      }
+      
+      throw error;
+    }
+  }
+
+  private async getRemoteRepositoryInfo(): Promise<{provider: string; owner: string; repo: string; url: string}> {
+    const git = (this.gitAnalyzer as any).git;
+    const remotes = await git.getRemotes(true);
     
-    // Simulated API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (remotes.length === 0) {
+      throw new Error('No git remotes configured');
+    }
     
-    this.log('✅ PR created successfully!');
-    this.log('🔗 https://github.com/example/repo/pull/123');
+    const origin = remotes.find((remote: any) => remote.name === 'origin') || remotes[0];
+    const url = origin.refs.push || origin.refs.fetch;
+    
+    // Parse GitHub URLs
+    if (url.includes('github.com')) {
+      const match = url.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
+      if (match) {
+        return {
+          provider: 'github',
+          owner: match[1],
+          repo: match[2],
+          url: url
+        };
+      }
+    }
+    
+    // Parse GitLab URLs
+    if (url.includes('gitlab.com')) {
+      const match = url.match(/gitlab\.com[:/]([^/]+)\/(.+?)(?:\.git)?$/);
+      if (match) {
+        return {
+          provider: 'gitlab',
+          owner: match[1],
+          repo: match[2],
+          url: url
+        };
+      }
+    }
+    
+    throw new Error(`Cannot determine repository provider from URL: ${url}`);
+  }
+
+  private async createGitHubPR(prDescription: any, context: SmartPRContext, flags: any, remoteInfo: any): Promise<void> {
+    this.startSpinner('Creating GitHub PR...');
+    
+    try {
+      // Prepare PR body
+      const prBody = this.formatPRBodyForGitHub(prDescription, context);
+      
+      // Build gh pr create command
+      const ghCommand = [
+        'gh', 'pr', 'create',
+        '--title', prDescription.title,
+        '--body', prBody,
+        '--head', flags['head-branch'],
+        '--base', flags['base-branch']
+      ];
+      
+      if (flags.draft) {
+        ghCommand.push('--draft');
+      }
+      
+      // Execute the command
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+      
+      const result = await execAsync(ghCommand.join(' '));
+      
+      // Extract PR URL from output
+      const prUrlMatch = result.stdout.match(/https:\/\/github\.com\/[^\s]+/);
+      const prUrl = prUrlMatch ? prUrlMatch[0] : `https://github.com/${remoteInfo.owner}/${remoteInfo.repo}/pulls`;
+      
+      this.stopSpinner(true, 'GitHub PR created successfully!');
+      this.log(`🔗 ${prUrl}`, 'info');
+      
+    } catch (error) {
+      this.stopSpinner(false, 'Failed to create GitHub PR');
+      throw error;
+    }
+  }
+
+  private async createGitLabPR(prDescription: any, context: SmartPRContext, flags: any, remoteInfo: any): Promise<void> {
+    this.startSpinner('Creating GitLab MR...');
+    
+    try {
+      // Prepare MR description
+      const mrDescription = this.formatPRBodyForGitLab(prDescription, context);
+      
+      // Build glab mr create command
+      const glabCommand = [
+        'glab', 'mr', 'create',
+        '--title', prDescription.title,
+        '--description', mrDescription,
+        '--source-branch', flags['head-branch'],
+        '--target-branch', flags['base-branch']
+      ];
+      
+      if (flags.draft) {
+        glabCommand.push('--draft');
+      }
+      
+      // Execute the command
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+      
+      const result = await execAsync(glabCommand.join(' '));
+      
+      // Extract MR URL from output
+      const mrUrlMatch = result.stdout.match(/https:\/\/gitlab\.com\/[^\s]+/);
+      const mrUrl = mrUrlMatch ? mrUrlMatch[0] : `https://gitlab.com/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_requests`;
+      
+      this.stopSpinner(true, 'GitLab MR created successfully!');
+      this.log(`🔗 ${mrUrl}`, 'info');
+      
+    } catch (error) {
+      this.stopSpinner(false, 'Failed to create GitLab MR');
+      throw error;
+    }
+  }
+
+  private formatPRBodyForGitHub(prDescription: any, context: SmartPRContext): string {
+    const parts = [];
+    
+    parts.push('## Description');
+    parts.push(prDescription.description || 'No description provided.');
+    parts.push('');
+    
+    if (prDescription.checklist && prDescription.checklist.length > 0) {
+      parts.push('## Checklist');
+      prDescription.checklist.forEach((item: string) => {
+        parts.push(`- [ ] ${item}`);
+      });
+      parts.push('');
+    }
+    
+    if (context.migrationInfo.detected) {
+      parts.push('## ⚠️ Migration Required');
+      parts.push(`**Type:** ${context.migrationInfo.type}`);
+      parts.push(`**Description:** ${context.migrationInfo.description}`);
+      parts.push('');
+      
+      if (context.migrationInfo.migrationSteps) {
+        parts.push('### Migration Steps');
+        context.migrationInfo.migrationSteps.forEach((step: string) => {
+          parts.push(`- ${step}`);
+        });
+        parts.push('');
+      }
+    }
+    
+    parts.push(`**Files changed:** ${context.metadata.fileCount}`);
+    parts.push(`**Lines:** +${context.metadata.totalInsertions} -${context.metadata.totalDeletions}`);
+    parts.push(`**Complexity:** ${context.reviewComplexity}`);
+    
+    return parts.join('\n');
+  }
+
+  private formatPRBodyForGitLab(prDescription: any, context: SmartPRContext): string {
+    // GitLab uses the same markdown format as GitHub
+    return this.formatPRBodyForGitHub(prDescription, context);
   }
 
   private async confirm(message: string): Promise<boolean> {

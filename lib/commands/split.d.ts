@@ -27,6 +27,7 @@ export default class Split extends BaseCommand {
     private handleSplitBoundary;
     private handleReorderCommits;
     private handleModifyMessages;
+    private generateSimpleCommitMessage;
     private getChangeTypeIcon;
     private determineChangeType;
 }

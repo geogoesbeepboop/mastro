@@ -65,18 +65,24 @@ export abstract class BaseCommand extends Command {
   }
 
   protected startSpinner(text: string): void {
-    if (this.mastroConfig.ui.spinner && !this.mastroConfig.ui.interactive) {
+    if (this.mastroConfig.ui.spinner) {
       this.spinner = ora({
         text,
         color: 'cyan',
         spinner: 'dots'
       }).start();
+    } else {
+      // Fallback to simple text output when spinner is disabled
+      console.log(`⏳ ${text}`);
     }
   }
 
   protected updateSpinner(text: string): void {
     if (this.spinner) {
       this.spinner.text = text;
+    } else if (!this.mastroConfig.ui.spinner) {
+      // Fallback to simple text output when spinner is disabled
+      console.log(`⏳ ${text}`);
     }
   }
 
@@ -88,6 +94,10 @@ export abstract class BaseCommand extends Command {
         this.spinner.fail(text);
       }
       this.spinner = undefined;
+    } else if (!this.mastroConfig.ui.spinner && text) {
+      // Fallback to simple text output when spinner is disabled
+      const icon = success ? '✓' : '✗';
+      console.log(`${icon} ${text}`);
     }
   }
 

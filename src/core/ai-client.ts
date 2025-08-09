@@ -39,6 +39,10 @@ export class AIClient {
     return this.provider.generateCommitMessage(context);
   }
 
+  async refineCommitMessage(originalMessage: CommitMessage, refinementInstruction: string, context: CommitContext): Promise<CommitMessage> {
+    return this.provider.refineCommitMessage(originalMessage, refinementInstruction, context);
+  }
+
   async explainChanges(context: CommitContext): Promise<DiffExplanation> {
     return this.provider.explainChanges(context);
   }
@@ -108,6 +112,48 @@ Generate commit messages that reflect your senior-level understanding of softwar
       return this.validateCommitMessage(parsed);
     } catch (error) {
       throw new Error(`Failed to generate commit message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async refineCommitMessage(originalMessage: CommitMessage, refinementInstruction: string, context: CommitContext): Promise<CommitMessage> {
+    const prompt = this.buildRefinementPrompt(originalMessage, refinementInstruction, context);
+    
+    try {
+      const response = await this.client.chat.completions.create({
+        model: this.config.model,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a Principal Software Engineer with 15+ years of experience. Your task is to refine commit messages based on specific instructions while maintaining technical accuracy and team conventions.
+
+Your refinement responsibilities:
+- Apply the specific refinement instruction precisely while maintaining message quality
+- Ensure the refined message still accurately describes the code changes
+- Preserve important technical details and context
+- Maintain adherence to team conventions and commit standards
+- Keep the message clear, concise, and professional
+
+Provide a refined commit message that addresses the user's specific request while improving the overall quality. Respond with valid JSON only.`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+        response_format: { type: 'json_object' }
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No response from OpenAI');
+      }
+
+      const parsed = JSON.parse(content) as CommitMessage;
+      return this.validateCommitMessage(parsed);
+    } catch (error) {
+      throw new Error(`Failed to refine commit message: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -554,6 +600,52 @@ Respond with JSON in this format:
   "businessContext": "why this change matters from business perspective",
   "migrationNotes": ["migration", "steps", "if", "needed"],
   "architecturalConsiderations": ["long-term", "architectural", "impacts"]
+}`;
+  }
+
+  private buildRefinementPrompt(originalMessage: CommitMessage, refinementInstruction: string, context: CommitContext): string {
+    const patterns = context.repository.patterns;
+    
+    return `Refine this commit message based on the specific user instruction:
+
+Original Commit Message:
+Title: ${originalMessage.title}
+Body: ${originalMessage.body || 'None'}
+Type: ${originalMessage.type}
+Scope: ${originalMessage.scope || 'None'}
+Confidence: ${originalMessage.confidence}
+Reasoning: ${originalMessage.reasoning}
+
+User Refinement Request: "${refinementInstruction}"
+
+Context:
+- Repository: ${context.repository.name} (${context.repository.language})
+- Team commit style: ${patterns.commitStyle}
+- Max length: ${patterns.maxLength} characters
+- Common prefixes: ${patterns.prefixes.join(', ')}
+- Files changed: ${context.changes.length}
+- Total changes: +${context.metadata.totalInsertions} -${context.metadata.totalDeletions}
+
+Files involved:
+${context.changes.slice(0, 5).map(change => 
+  `- ${change.file} (${change.type}, +${change.insertions} -${change.deletions})`
+).join('\n')}
+
+Please refine the commit message according to the user's instruction while:
+1. Keeping it accurate to the actual code changes
+2. Following the team's ${patterns.commitStyle} convention
+3. Staying under ${patterns.maxLength} characters for the title
+4. Maintaining or improving the technical quality
+5. Preserving essential context and details
+
+Respond with JSON in this format:
+{
+  "title": "refined commit message title",
+  "body": "refined body (optional)",
+  "type": "conventional commit type",
+  "scope": "optional scope",
+  "confidence": 0.95,
+  "reasoning": "explanation of how the refinement addresses the user's request"
 }`;
   }
 }

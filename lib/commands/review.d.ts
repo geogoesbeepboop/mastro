@@ -21,6 +21,7 @@ export default class Review extends BaseCommand {
     private streamingClient;
     private streamingRenderer;
     private loadingManager;
+    private interactiveUI;
     run(): Promise<void>;
     private getOrCreateSession;
     private displaySessionOverview;
@@ -33,6 +34,16 @@ export default class Review extends BaseCommand {
     private outputTerminal;
     private outputActionableItemsOnly;
     private enterInteractiveMode;
+    private showDetailedSuggestions;
+    private exportActionableItems;
+    private runFocusedReview;
+    private showLearningResources;
+    private formatAsMarkdownTodo;
+    private formatAsGitHubIssues;
+    private saveToFile;
+    private getFocusSpecificRules;
+    private generateLearningResources;
+    private formatLearningResources;
     private getPriorityWeight;
     private getPriorityIcon;
 }

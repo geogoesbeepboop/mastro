@@ -5,6 +5,7 @@ This diagram illustrates the technical workflow for `mastro split` command, show
 ## Complete Split Workflow
 
 ```mermaid
+
 graph TD
     A["`**Working Directory Changes**
     Multiple files modified
@@ -88,11 +89,12 @@ graph TD
     Analysis available as reference
     Improved commit hygiene`"]
 
-    style A fill:#e1f5fe
-    style G fill:#fff3e0
-    style I fill:#f3e5f5
-    style N fill:#e8f5e8
-    style O fill:#fff9c4
+    style A fill:#e1f5fe color:#000000
+    style G fill:#fff3e0 color:#000000
+    style I fill:#f3e5f5 color:#000000
+    style N fill:#e8f5e8 color:#000000
+    style O fill:#fff9c4 color:#000000
+
 ```
 
 ## Detailed Component Breakdown
@@ -100,6 +102,7 @@ graph TD
 ### 1. Semantic Analysis Engine
 
 ```mermaid
+
 graph LR
     SA["`**Semantic Analysis**`"] --> FR["`**File Relationships**
     • Import declarations
@@ -125,16 +128,18 @@ graph LR
     • Refactoring patterns
     • Style consistency`"]
 
-    style SA fill:#e3f2fd
-    style FR fill:#f1f8e9
-    style CC fill:#fce4ec
-    style TP fill:#fff8e1
-    style CS fill:#f3e5f5
+    style SA fill:#e3f2fd color:#000000
+    style FR fill:#f1f8e9 color:#000000
+    style CC fill:#fce4ec color:#000000
+    style TP fill:#fff8e1 color:#000000
+    style CS fill:#f3e5f5 color:#000000
+
 ```
 
 ### 2. Impact Analysis Engine
 
 ```mermaid
+
 graph LR
     IA["`**Impact Analysis**`"] --> BI["`**Business Impact**
     • User-facing changes
@@ -160,16 +165,18 @@ graph LR
     • Configuration updates
     • Documentation needs`"]
 
-    style IA fill:#e8eaf6
-    style BI fill:#e0f2f1
-    style TI fill:#fff3e0
-    style RI fill:#ffebee
-    style SI fill:#f9fbe7
+    style IA fill:#e8eaf6 color:#000000
+    style BI fill:#e0f2f1 color:#000000
+    style TI fill:#fff3e0 color:#000000
+    style RI fill:#ffebee color:#000000
+    style SI fill:#f9fbe7 color:#000000
+
 ```
 
 ### 3. Commit Boundary Detection
 
 ```mermaid
+
 flowchart TD
     CBD["`**Commit Boundary Detection**`"] --> FG["`**Feature Grouping**
     Related functionality
@@ -201,12 +208,13 @@ flowchart TD
     Detailed descriptions
     Context explanations`"]
 
-    style CBD fill:#e1f5fe
-    style FG fill:#e8f5e8
-    style CG fill:#fff3e0
-    style DG fill:#f3e5f5
-    style PS fill:#ffebee
-    style CM fill:#f9fbe7
+    style CBD fill:#e1f5fe color:#000000
+    style FG fill:#e8f5e8 color:#000000
+    style CG fill:#fff3e0 color:#000000
+    style DG fill:#f3e5f5 color:#000000
+    style PS fill:#ffebee color:#000000
+    style CM fill:#f9fbe7 color:#000000
+
 ```
 
 ## Command Options & Flags
@@ -214,6 +222,7 @@ flowchart TD
 ### Basic Usage Flow
 
 ```mermaid
+
 graph TD
     CMD["`mastro split`"] --> DA["`**Default Analysis**
     Show boundaries
@@ -240,11 +249,12 @@ graph TD
     API integration
     Tool chaining`"]
 
-    style CMD fill:#e3f2fd
-    style AS fill:#e8f5e8  
-    style DR fill:#fff3e0
-    style INT fill:#f3e5f5
-    style JSON fill:#fff9c4
+    style CMD fill:#e3f2fd color:#000000
+    style AS fill:#e8f5e8 color:#000000  
+    style DR fill:#fff3e0 color:#000000
+    style INT fill:#f3e5f5 color:#000000
+    style JSON fill:#fff9c4 color:#000000
+
 ```
 
 ## Success Metrics & Benefits
@@ -252,6 +262,7 @@ graph TD
 ### Quality Improvements
 
 ```mermaid
+
 graph LR
     QB["`**Quality Benefits**`"] --> CC["`**Clean Commits**
     • 40% reduction in mixed concerns
@@ -273,11 +284,12 @@ graph LR
     • Contextual commit messages
     • Development story tracking`"]
 
-    style QB fill:#e8eaf6
-    style CC fill:#e8f5e8
-    style VH fill:#fff3e0
-    style TR fill:#f3e5f5
-    style CD fill:#f9fbe7
+    style QB fill:#e8eaf6 color:#000000
+    style CC fill:#e8f5e8 color:#000000
+    style VH fill:#fff3e0 color:#000000
+    style TR fill:#f3e5f5 color:#000000
+    style CD fill:#f9fbe7 color:#000000
+
 ```
 
 ## Integration Points
@@ -285,6 +297,7 @@ graph LR
 ### AI Model Integration
 
 ```mermaid
+
 graph TB
     AI["`**AI Integration**`"] --> SA["`**Semantic Analyzer**
     Code understanding
@@ -314,12 +327,13 @@ graph TB
     Customization options
     Strategy visualization`"]
 
-    style AI fill:#e1f5fe
-    style SA fill:#e8f5e8
-    style IA fill:#fff3e0
-    style CG fill:#f3e5f5
-    style ML fill:#ffebee
-    style UI fill:#f9fbe7
+    style AI fill:#e1f5fe color:#000000
+    style SA fill:#e8f5e8 color:#000000
+    style IA fill:#fff3e0 color:#000000
+    style CG fill:#f3e5f5 color:#000000
+    style ML fill:#ffebee color:#000000
+    style UI fill:#f9fbe7 color:#000000
+
 ```
 
 ---

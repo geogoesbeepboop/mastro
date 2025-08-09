@@ -5,6 +5,7 @@ This diagram illustrates the technical workflow for `mastro analytics` command, 
 ## Complete Analytics Workflow
 
 ```mermaid
+
 graph TD
     A["`**Session Start**
     Git repository detection
@@ -86,16 +87,18 @@ graph TD
     Achievement tracking
     Goal adjustment`"]
 
-    style A fill:#e1f5fe
-    style D fill:#fff3e0
-    style F fill:#f3e5f5
-    style N fill:#e8f5e8
-    style O fill:#fff9c4
+    style A fill:#e1f5fe color:#000000
+    style D fill:#fff3e0 color:#000000
+    style F fill:#f3e5f5 color:#000000
+    style N fill:#e8f5e8 color:#000000
+    style O fill:#fff9c4 color:#000000
+
 ```
 
 ## Session Tracking Engine
 
 ```mermaid
+
 graph TB
     STE["`**Session Tracking Engine**`"] --> FM["`**File Monitoring**
     • File change detection
@@ -136,18 +139,20 @@ graph TB
     Pattern classifications
     Performance scores`"]
 
-    style STE fill:#e3f2fd
-    style FM fill:#f1f8e9
-    style TT fill:#fff8e1
-    style GA fill:#f3e5f5
-    style CS fill:#fce4ec
-    style PM fill:#fff3e0
-    style SD fill:#e8f5e8
+    style STE fill:#e3f2fd color:#000000
+    style FM fill:#f1f8e9 color:#000000
+    style TT fill:#fff8e1 color:#000000
+    style GA fill:#f3e5f5 color:#000000
+    style CS fill:#fce4ec color:#000000
+    style PM fill:#fff3e0 color:#000000
+    style SD fill:#e8f5e8 color:#000000
+
 ```
 
 ## Productivity Metrics Calculation
 
 ```mermaid
+
 flowchart TD
     PMC["`**Productivity Metrics Calculator**`"] --> LPM["`**Lines per Minute**
     Code additions/deletions
@@ -189,19 +194,21 @@ flowchart TD
     Break timing recommendations
     Productivity curve analysis`"]
 
-    style PMC fill:#e8eaf6
-    style LPM fill:#e8f5e8
-    style FMH fill:#fff3e0
-    style CF fill:#f3e5f5
-    style RR fill:#ffebee
-    style VS fill:#f9fbe7
-    style PH fill:#e0f2f1
-    style OSL fill:#fce4ec
+    style PMC fill:#e8eaf6 color:#000000
+    style LPM fill:#e8f5e8 color:#000000
+    style FMH fill:#fff3e0 color:#000000
+    style CF fill:#f3e5f5 color:#000000
+    style RR fill:#ffebee color:#000000
+    style VS fill:#f9fbe7 color:#000000
+    style PH fill:#e0f2f1 color:#000000
+    style OSL fill:#fce4ec color:#000000
+
 ```
 
 ## Focus Metrics & Deep Work Analysis
 
 ```mermaid
+
 graph LR
     FMA["`**Focus Metrics Analyzer**`"] --> FS["`**Focus Score (0-100)**
     Consistency of changes
@@ -237,18 +244,20 @@ graph LR
     Notification filtering
     Deep work optimization`"]
 
-    style FMA fill:#e1f5fe
-    style FS fill:#e8f5e8
-    style DE fill:#fff3e0
-    style DWS fill:#f3e5f5
-    style CSF fill:#ffebee
-    style FR fill:#f9fbe7
-    style FM fill:#e0f2f1
+    style FMA fill:#e1f5fe color:#000000
+    style FS fill:#e8f5e8 color:#000000
+    style DE fill:#fff3e0 color:#000000
+    style DWS fill:#f3e5f5 color:#000000
+    style CSF fill:#ffebee color:#000000
+    style FR fill:#f9fbe7 color:#000000
+    style FM fill:#e0f2f1 color:#000000
+
 ```
 
 ## Pattern Detection System
 
 ```mermaid
+
 flowchart TB
     PDS["`**Pattern Detection System**`"] --> TDD["`**Test-Driven Development**
     Test file creation before code
@@ -296,20 +305,22 @@ flowchart TB
     Best practice suggestions
     Habit reinforcement`"]
 
-    style PDS fill:#e3f2fd
-    style TDD fill:#e8f5e8
-    style RFA fill:#fff3e0
-    style FBW fill:#f3e5f5
-    style HFP fill:#ffebee
-    style SP fill:#f9fbe7
-    style CP fill:#e0f2f1
-    style PI fill:#fff8e1
-    style PR fill:#fce4ec
+    style PDS fill:#e3f2fd color:#000000
+    style TDD fill:#e8f5e8 color:#000000
+    style RFA fill:#fff3e0 color:#000000
+    style FBW fill:#f3e5f5 color:#000000
+    style HFP fill:#ffebee color:#000000
+    style SP fill:#f9fbe7 color:#000000
+    style CP fill:#e0f2f1 color:#000000
+    style PI fill:#fff8e1 color:#000000
+    style PR fill:#fce4ec color:#000000
+
 ```
 
 ## Quality Metrics Assessment
 
 ```mermaid
+
 graph TD
     QMA["`**Quality Metrics Assessment**`"] --> TCI["`**Test Coverage Increase**
     New test files created
@@ -345,18 +356,20 @@ graph TD
     Documentation needs
     Security improvements`"]
 
-    style QMA fill:#e8eaf6
-    style TCI fill:#e8f5e8
-    style CCT fill:#fff3e0
-    style DU fill:#f3e5f5
-    style SC fill:#ffebee
-    style QS fill:#f9fbe7
-    style QR fill:#e0f2f1
+    style QMA fill:#e8eaf6 color:#000000
+    style TCI fill:#e8f5e8 color:#000000
+    style CCT fill:#fff3e0 color:#000000
+    style DU fill:#f3e5f5 color:#000000
+    style SC fill:#ffebee color:#000000
+    style QS fill:#f9fbe7 color:#000000
+    style QR fill:#e0f2f1 color:#000000
+
 ```
 
 ## Personalized Insights Engine
 
 ```mermaid
+
 flowchart LR
     PIE["`**Personalized Insights Engine**`"] --> PA["`**Performance Analysis**
     Individual patterns
@@ -386,12 +399,13 @@ flowchart LR
     Context-aware suggestions
     Growth roadmap`"]
 
-    style PIE fill:#e1f5fe
-    style PA fill:#e8f5e8
-    style OO fill:#fff3e0
-    style GS fill:#f3e5f5
-    style AI fill:#f9fbe7
-    style IR fill:#e0f2f1
+    style PIE fill:#e1f5fe color:#000000
+    style PA fill:#e8f5e8 color:#000000
+    style OO fill:#fff3e0 color:#000000
+    style GS fill:#f3e5f5 color:#000000
+    style AI fill:#f9fbe7 color:#000000
+    style IR fill:#e0f2f1 color:#000000
+
 ```
 
 ## Command Options & Output Formats
@@ -399,6 +413,7 @@ flowchart LR
 ### Analytics Command Flow
 
 ```mermaid
+
 graph TD
     CMD["`mastro analytics`"] --> BD["`**Basic Dashboard**
     Current session metrics
@@ -430,17 +445,19 @@ graph TD
     Sharing capabilities
     Archive generation`"]
 
-    style CMD fill:#e3f2fd
-    style INS fill:#e8f5e8
-    style FM fill:#fff3e0
-    style TREND fill:#f3e5f5
-    style JSON fill:#fff9c4
-    style MD fill:#ffebee
+    style CMD fill:#e3f2fd color:#000000
+    style INS fill:#e8f5e8 color:#000000
+    style FM fill:#fff3e0 color:#000000
+    style TREND fill:#f3e5f5 color:#000000
+    style JSON fill:#fff9c4 color:#000000
+    style MD fill:#ffebee color:#000000
+
 ```
 
 ## Data Storage & Persistence
 
 ```mermaid
+
 graph LR
     DSP["`**Data Storage & Persistence**`"] --> LD["`**Local Data**
     ~/.mastro/sessions/
@@ -465,11 +482,12 @@ graph LR
     SM --> DP
     HA --> DP
 
-    style DSP fill:#e8eaf6
-    style LD fill:#e8f5e8
-    style SM fill:#fff3e0
-    style HA fill:#f3e5f5
-    style DP fill:#e0f2f1
+    style DSP fill:#e8eaf6 color:#000000
+    style LD fill:#e8f5e8 color:#000000
+    style SM fill:#fff3e0 color:#000000
+    style HA fill:#f3e5f5 color:#000000
+    style DP fill:#e0f2f1 color:#000000
+
 ```
 
 ---

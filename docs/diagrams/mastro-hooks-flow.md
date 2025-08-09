@@ -5,6 +5,7 @@ This diagram illustrates the technical workflow for `mastro hooks` command, show
 ## Complete Hooks Workflow
 
 ```mermaid
+
 graph TD
     A["`**Hook Installation Request**
     mastro hooks install
@@ -85,17 +86,19 @@ graph TD
     Best practice suggestions
     Trend tracking`"]
 
-    style A fill:#e1f5fe
-    style G fill:#fff3e0
-    style H fill:#f3e5f5
-    style K fill:#e8f5e8
-    style L fill:#ffebee
-    style M fill:#fff9c4
+    style A fill:#e1f5fe color:#000000
+    style G fill:#fff3e0 color:#000000
+    style H fill:#f3e5f5 color:#000000
+    style K fill:#e8f5e8 color:#000000
+    style L fill:#ffebee color:#000000
+    style M fill:#fff9c4 color:#000000
+
 ```
 
 ## Hook Generation Engine
 
 ```mermaid
+
 graph TB
     HGE["`**Hook Generation Engine**`"] --> ST["`**Script Template**
     • Base hook structure
@@ -130,17 +133,19 @@ graph TB
     MC --> HS
     EH --> HS
 
-    style HGE fill:#e3f2fd
-    style ST fill:#f1f8e9
-    style CP fill:#fff8e1
-    style MC fill:#f3e5f5
-    style EH fill:#fce4ec
-    style HS fill:#e8f5e8
+    style HGE fill:#e3f2fd color:#000000
+    style ST fill:#f1f8e9 color:#000000
+    style CP fill:#fff8e1 color:#000000
+    style MC fill:#f3e5f5 color:#000000
+    style EH fill:#fce4ec color:#000000
+    style HS fill:#e8f5e8 color:#000000
+
 ```
 
 ## AI-Powered Validation Engine
 
 ```mermaid
+
 flowchart TD
     AVE["`**AI Validation Engine**`"] --> SA["`**Security Analysis**
     🔒 Vulnerability detection
@@ -180,18 +185,20 @@ flowchart TD
     Actionable recommendations
     Performance metrics`"]
 
-    style AVE fill:#e8eaf6
-    style SA fill:#ffebee
-    style PA fill:#fff3e0
-    style MA fill:#e8f5e8
-    style TA fill:#f3e5f5
-    style IC fill:#f9fbe7
-    style VR fill:#e0f2f1
+    style AVE fill:#e8eaf6 color:#000000
+    style SA fill:#ffebee color:#000000
+    style PA fill:#fff3e0 color:#000000
+    style MA fill:#e8f5e8 color:#000000
+    style TA fill:#f3e5f5 color:#000000
+    style IC fill:#f9fbe7 color:#000000
+    style VR fill:#e0f2f1 color:#000000
+
 ```
 
 ## Quality Gate Decision Matrix
 
 ```mermaid
+
 graph LR
     QGD["`**Quality Gate Decision**`"] --> SL["`**Strictness Levels**
     
@@ -239,16 +246,18 @@ graph LR
     ❌ Block commit
     ⚠️ Warn and allow`"]
 
-    style QGD fill:#e1f5fe
-    style SL fill:#e8f5e8
-    style PT fill:#fff3e0
-    style DD fill:#f3e5f5
-    style AR fill:#f9fbe7
+    style QGD fill:#e1f5fe color:#000000
+    style SL fill:#e8f5e8 color:#000000
+    style PT fill:#fff3e0 color:#000000
+    style DD fill:#f3e5f5 color:#000000
+    style AR fill:#f9fbe7 color:#000000
+
 ```
 
 ## Hook Management Operations
 
 ```mermaid
+
 flowchart TB
     HMO["`**Hook Management**`"] --> INST["`**Installation Flow**
     1. Backup existing hooks
@@ -281,17 +290,19 @@ flowchart TB
     3. Configuration cleanup
     4. User confirmation`"]
 
-    style HMO fill:#e3f2fd
-    style INST fill:#e8f5e8
-    style STAT fill:#fff3e0
-    style VAL fill:#f3e5f5
-    style CONF fill:#ffebee
-    style UNINST fill:#f9fbe7
+    style HMO fill:#e3f2fd color:#000000
+    style INST fill:#e8f5e8 color:#000000
+    style STAT fill:#fff3e0 color:#000000
+    style VAL fill:#f3e5f5 color:#000000
+    style CONF fill:#ffebee color:#000000
+    style UNINST fill:#f9fbe7 color:#000000
+
 ```
 
 ## Performance Optimization
 
 ```mermaid
+
 graph TD
     PO["`**Performance Optimization**`"] --> CC["`**Code Caching**
     • Analysis result caching
@@ -326,17 +337,19 @@ graph TD
     IC --> PM
     TO --> PM
 
-    style PO fill:#e8eaf6
-    style CC fill:#e8f5e8
-    style PL fill:#fff3e0
-    style IC fill:#f3e5f5
-    style TO fill:#ffebee
-    style PM fill:#f9fbe7
+    style PO fill:#e8eaf6 color:#000000
+    style CC fill:#e8f5e8 color:#000000
+    style PL fill:#fff3e0 color:#000000
+    style IC fill:#f3e5f5 color:#000000
+    style TO fill:#ffebee color:#000000
+    style PM fill:#f9fbe7 color:#000000
+
 ```
 
 ## Hook Script Structure
 
 ```mermaid
+
 flowchart LR
     HSS["`**Generated Hook Script**`"] --> HD["`**Header Section**
     • Shebang declaration
@@ -362,11 +375,12 @@ flowchart LR
     • Performance logging
     • Cleanup operations`"]
 
-    style HSS fill:#e1f5fe
-    style HD fill:#e8f5e8
-    style MC fill:#fff3e0
-    style EH fill:#f3e5f5
-    style EX fill:#f9fbe7
+    style HSS fill:#e1f5fe color:#000000
+    style HD fill:#e8f5e8 color:#000000
+    style MC fill:#fff3e0 color:#000000
+    style EH fill:#f3e5f5 color:#000000
+    style EX fill:#f9fbe7 color:#000000
+
 ```
 
 ## Integration with Git Workflow
@@ -411,6 +425,7 @@ sequenceDiagram
 ### Hook Installation Options
 
 ```mermaid
+
 graph TD
     CMD["`mastro hooks install`"] --> DEF["`**Default Installation**
     Moderate strictness
@@ -437,16 +452,18 @@ graph TD
     Selective validation
     Performance optimization`"]
 
-    style CMD fill:#e3f2fd
-    style STR fill:#e8f5e8
-    style PER fill:#fff3e0
-    style THR fill:#f3e5f5
-    style SKIP fill:#fff9c4
+    style CMD fill:#e3f2fd color:#000000
+    style STR fill:#e8f5e8 color:#000000
+    style PER fill:#fff3e0 color:#000000
+    style THR fill:#f3e5f5 color:#000000
+    style SKIP fill:#fff9c4 color:#000000
+
 ```
 
 ## Success Metrics & Quality Improvements
 
 ```mermaid
+
 graph LR
     SM["`**Success Metrics**`"] --> QI["`**Quality Improvements**
     • 23% bug reduction
@@ -466,10 +483,11 @@ graph LR
     • Best practice adoption
     • Knowledge sharing`"]
 
-    style SM fill:#e8eaf6
-    style QI fill:#e8f5e8
-    style PI fill:#fff3e0
-    style LO fill:#f3e5f5
+    style SM fill:#e8eaf6 color:#000000
+    style QI fill:#e8f5e8 color:#000000
+    style PI fill:#fff3e0 color:#000000
+    style LO fill:#f3e5f5 color:#000000
+
 ```
 
 ---

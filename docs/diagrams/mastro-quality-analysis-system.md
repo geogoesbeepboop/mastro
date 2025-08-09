@@ -93,6 +93,7 @@ mindmap
 ## Quality Scoring & Grading Algorithm
 
 ```mermaid
+
 flowchart TD
     A[File Content Analysis] --> B[Initialize Base Scores]
     B --> B1[Complexity: 100]
@@ -204,19 +205,21 @@ flowchart TD
     J9 --> M
     L --> M
     
-    style A fill:#e1f5fe
-    style C6 fill:#f1f8e9
-    style D9 fill:#f1f8e9
-    style E7 fill:#f1f8e9  
-    style F9 fill:#ffebee
-    style G7 fill:#f1f8e9
-    style H7 fill:#f1f8e9
-    style M fill:#e8f5e8
+    style A fill:#e1f5fe color:#000000
+    style C6 fill:#f1f8e9 color:#000000
+    style D9 fill:#f1f8e9 color:#000000
+    style E7 fill:#f1f8e9 color:#000000  
+    style F9 fill:#ffebee color:#000000
+    style G7 fill:#f1f8e9 color:#000000
+    style H7 fill:#f1f8e9 color:#000000
+    style M fill:#e8f5e8 color:#000000
+
 ```
 
 ## Quality Issue Priority & Severity Matrix
 
 ```mermaid
+
 graph TB
     subgraph "Issue Categorization"
         A[Quality Issues Detected] --> B{Issue Category}
@@ -300,15 +303,17 @@ graph TB
         K3 --> T[Educational Content]
     end
     
-    style C fill:#ffebee
-    style C2 fill:#f44336
-    style I1 fill:#ff5252
-    style L fill:#ffcdd2
+    style C fill:#ffebee color:#000000
+    style C2 fill:#f44336 color:#ffffff
+    style I1 fill:#ff5252 color:#000000
+    style L fill:#ffcdd2 color:#000000
+
 ```
 
 ## Quality Trend Analysis & Improvement Tracking
 
 ```mermaid
+
 flowchart LR
     subgraph "Historical Data Collection"
         A[File Analysis] --> B[Store Quality Metrics]
@@ -370,18 +375,20 @@ flowchart LR
         AA --> GG[Proactive Suggestion: Process Improvement]
     end
     
-    style A fill:#e1f5fe
-    style J1 fill:#c8e6c9
-    style J2 fill:#ffcdd2
-    style L1 fill:#a5d6a7
-    style L2 fill:#ef9a9a
-    style BB fill:#4caf50
-    style CC fill:#f44336
+    style A fill:#e1f5fe color:#000000
+    style J1 fill:#c8e6c9 color:#000000
+    style J2 fill:#ffcdd2 color:#000000
+    style L1 fill:#a5d6a7 color:#000000
+    style L2 fill:#ef9a9a color:#000000
+    style BB fill:#4caf50 color:#000000
+    style CC fill:#f44336 color:#ffffff
+
 ```
 
 ## Project-Wide Quality Analysis & Hotspot Detection
 
 ```mermaid
+
 graph TB
     subgraph "Project Scanning"
         A[Find All Source Files] --> B[Filter by Extensions]
@@ -483,10 +490,11 @@ graph TB
         AA --> AA3[Quality Goals Progress]
     end
     
-    style A fill:#e1f5fe
-    style L fill:#fff3e0
-    style P fill:#ffebee
-    style T1 fill:#e8f5e8
-    style T2 fill:#ffcdd2
-    style Y fill:#f3e5f5
+    style A fill:#e1f5fe color:#000000
+    style L fill:#fff3e0 color:#000000
+    style P fill:#ffebee color:#000000
+    style T1 fill:#e8f5e8 color:#000000
+    style T2 fill:#ffcdd2 color:#000000
+    style Y fill:#f3e5f5 color:#000000
+
 ```

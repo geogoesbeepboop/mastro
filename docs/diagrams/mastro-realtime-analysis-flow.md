@@ -3,6 +3,7 @@
 ## Complete Real-Time Development Guidance System
 
 ```mermaid
+
 graph TB
     subgraph "VS Code Extension"
         A[Extension Activation] --> B[Initialize Services]
@@ -78,10 +79,11 @@ graph TB
         PP --> QQ[User Can Navigate to Issues]
     end
     
-    style A fill:#e1f5fe
-    style V fill:#f3e5f5
-    style GG fill:#e8f5e8
-    style MM fill:#fff3e0
+    style A fill:#e1f5fe color:#000000
+    style V fill:#f3e5f5 color:#000000
+    style GG fill:#e8f5e8 color:#000000
+    style MM fill:#fff3e0 color:#000000
+
 ```
 
 ## File System Monitoring & Analysis Flow
@@ -145,6 +147,7 @@ sequenceDiagram
 ## Live Quality Metrics Engine Analysis Flow
 
 ```mermaid
+
 flowchart TD
     A[File Change Detected] --> B{Is Source File?}
     B -->|No| C[Skip Analysis]
@@ -199,19 +202,21 @@ flowchart TD
     T --> U[Cache Metrics for File]
     U --> V[Return Complete Analysis]
     
-    style A fill:#e3f2fd
-    style G fill:#f1f8e9
-    style I fill:#f1f8e9  
-    style K fill:#f1f8e9
-    style M fill:#ffebee
-    style O fill:#f1f8e9
-    style Q fill:#f1f8e9
-    style V fill:#e8f5e8
+    style A fill:#e3f2fd color:#000000
+    style G fill:#f1f8e9 color:#000000
+    style I fill:#f1f8e9 color:#000000  
+    style K fill:#f1f8e9 color:#000000
+    style M fill:#ffebee color:#000000
+    style O fill:#f1f8e9 color:#000000
+    style Q fill:#f1f8e9 color:#000000
+    style V fill:#e8f5e8 color:#000000
+
 ```
 
 ## Proactive Suggestions Decision Tree
 
 ```mermaid
+
 flowchart TD
     A[Quality Metrics Generated] --> B{Within Cooldown Period?}
     B -->|Yes| C[Skip Suggestions]
@@ -284,16 +289,18 @@ flowchart TD
     AA --> CC
     BB --> CC
     
-    style A fill:#e1f5fe
-    style N2 fill:#ffebee
-    style M1 fill:#fff3e0
-    style X fill:#e8f5e8
-    style CC fill:#f3e5f5
+    style A fill:#e1f5fe color:#000000
+    style N2 fill:#ffebee color:#000000
+    style M1 fill:#fff3e0 color:#000000
+    style X fill:#e8f5e8 color:#000000
+    style CC fill:#f3e5f5 color:#000000
+
 ```
 
 ## Code Actions & Quick Fixes Flow
 
 ```mermaid
+
 flowchart LR
     subgraph "VS Code Integration"
         A[User Right-Clicks Code] --> B[VS Code Requests Code Actions]
@@ -366,17 +373,19 @@ flowchart LR
     X --> Z[Changes Applied to File]
     Y --> AA[Helper Dialog/Action Executed]
     
-    style A fill:#e3f2fd
-    style C fill:#f3e5f5
-    style X fill:#e8f5e8
-    style Y fill:#e8f5e8
-    style Z fill:#c8e6c9
-    style AA fill:#c8e6c9
+    style A fill:#e3f2fd color:#000000
+    style C fill:#f3e5f5 color:#000000
+    style X fill:#e8f5e8 color:#000000
+    style Y fill:#e8f5e8 color:#000000
+    style Z fill:#c8e6c9 color:#000000
+    style AA fill:#c8e6c9 color:#000000
+
 ```
 
 ## Development Pattern Detection Algorithm
 
 ```mermaid
+
 flowchart TD
     A[File Changes Collected] --> B[Sort by Timestamp]
     B --> C[Separate Test vs Source Files]
@@ -433,16 +442,18 @@ flowchart TD
     K --> L[Determine Next Best Actions]
     L --> M[Return Pattern Insights]
     
-    style A fill:#e1f5fe
-    style D fill:#e8f5e8
-    style E fill:#fff3e0  
-    style F fill:#f3e5f5
-    style M fill:#c8e6c9
+    style A fill:#e1f5fe color:#000000
+    style D fill:#e8f5e8 color:#000000
+    style E fill:#fff3e0 color:#000000  
+    style F fill:#f3e5f5 color:#000000
+    style M fill:#c8e6c9 color:#000000
+
 ```
 
 ## Configuration & Settings Management
 
 ```mermaid
+
 graph TB
     subgraph "VS Code Settings"
         A[mastro.realTimeAnalysis.*] --> B[Real-Time Analyzer Config]
@@ -491,9 +502,10 @@ graph TB
         Y --> Z
     end
     
-    style A fill:#e1f5fe
-    style B fill:#f1f8e9
-    style D fill:#f1f8e9
-    style F fill:#f1f8e9
-    style Z fill:#e8f5e8
+    style A fill:#e1f5fe color:#000000
+    style B fill:#f1f8e9 color:#000000
+    style D fill:#f1f8e9 color:#000000
+    style F fill:#f1f8e9 color:#000000
+    style Z fill:#e8f5e8 color:#000000
+
 ```

@@ -35,11 +35,16 @@ export default class PRCreate extends BaseCommand {
     private outputTerminalPR;
     private outputMarkdownPR;
     private createActualPR;
+    private checkGitHubCLI;
+    private checkGitLabCLI;
+    private getCurrentBranchCompareURL;
+    private offerPRFallbackOptions;
     private getRemoteRepositoryInfo;
     private createGitHubPR;
     private createGitLabPR;
     private formatPRBodyForGitHub;
     private formatPRBodyForGitLab;
+    private calculateStatsFromUnpushedCommits;
     private handleStagedChanges;
     private confirm;
 }

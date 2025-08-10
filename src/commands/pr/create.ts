@@ -331,22 +331,27 @@ export default class PRCreate extends BaseCommand {
 
     const template = this.createPRTemplate(templateType, session);
     
-    // Analyze review complexity
-    const changeStats = session.cumulativeStats;
+    // Get all relevant changes (staged, working, or from unpushed commits)
+    const allChanges = [...session.workingChanges, ...session.stagedChanges];
+    let effectiveStats = session.cumulativeStats;
+    
+    // If no working/staged changes but we have unpushed commits, calculate stats from commits
+    if (allChanges.length === 0 && await this.sessionTracker.hasUnpushedCommits()) {
+      effectiveStats = await this.calculateStatsFromUnpushedCommits();
+    }
+    
+    // Analyze review complexity using effective stats
     let reviewComplexity: SmartPRContext['reviewComplexity'];
     
-    if (changeStats.totalFiles > 20 || changeStats.changedLines > 1000) {
+    if (effectiveStats.totalFiles > 20 || effectiveStats.changedLines > 1000) {
       reviewComplexity = 'extensive';
-    } else if (changeStats.totalFiles > 10 || changeStats.changedLines > 500) {
+    } else if (effectiveStats.totalFiles > 10 || effectiveStats.changedLines > 500) {
       reviewComplexity = 'complex';
-    } else if (changeStats.totalFiles > 5 || changeStats.changedLines > 100) {
+    } else if (effectiveStats.totalFiles > 5 || effectiveStats.changedLines > 100) {
       reviewComplexity = 'moderate';
     } else {
       reviewComplexity = 'simple';
     }
-
-    // Convert session to commit context
-    const allChanges = [...session.workingChanges, ...session.stagedChanges];
     
     return {
       changes: allChanges,
@@ -361,10 +366,10 @@ export default class PRCreate extends BaseCommand {
       staged: session.stagedChanges.length > 0,
       workingDir: process.cwd(),
       metadata: {
-        totalInsertions: changeStats.totalInsertions,
-        totalDeletions: changeStats.totalDeletions,
-        fileCount: changeStats.totalFiles,
-        changeComplexity: changeStats.complexity === 'critical' ? 'high' : changeStats.complexity
+        totalInsertions: effectiveStats.totalInsertions,
+        totalDeletions: effectiveStats.totalDeletions,
+        fileCount: effectiveStats.totalFiles,
+        changeComplexity: effectiveStats.complexity === 'critical' ? 'high' : effectiveStats.complexity
       },
       prTemplate: template,
       migrationInfo: migrationInfo || {
@@ -587,18 +592,143 @@ export default class PRCreate extends BaseCommand {
       this.log('✗ Failed to create PR', 'error');
       
       if (error instanceof Error) {
-        if (error.message.includes('gh: command not found')) {
-          this.log('GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/', 'error');
-        } else if (error.message.includes('glab: command not found')) {
-          this.log('GitLab CLI (glab) is not installed. Please install it from https://glab.readthedocs.io/', 'error');
+        if (error.message.includes('GitHub CLI not found') || error.message.includes('GitLab CLI not found')) {
+          // CLI not available - show installation instructions and offer fallbacks
+          this.log(error.message, 'error');
+          await this.offerPRFallbackOptions(prDescription, context, flags);
         } else if (error.message.includes('authentication')) {
           this.log('Authentication failed. Please run `gh auth login` or `glab auth login` first.', 'error');
+          await this.offerPRFallbackOptions(prDescription, context, flags);
         } else {
           this.log(`PR creation failed: ${error.message}`, 'error');
+          await this.offerPRFallbackOptions(prDescription, context, flags);
         }
       }
       
       throw error;
+    }
+  }
+
+  private async checkGitHubCLI(): Promise<void> {
+    try {
+      const { spawn } = await import('child_process');
+      
+      await new Promise<void>((resolve, reject) => {
+        const ghProcess = spawn('gh', ['--version'], { stdio: 'ignore' });
+        
+        ghProcess.on('close', (code) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error('GitHub CLI check failed'));
+          }
+        });
+        
+        ghProcess.on('error', (error) => {
+          reject(error);
+        });
+      });
+      
+    } catch (error) {
+      throw new Error(`GitHub CLI not found. Please install it to create PRs:
+
+🔧 Installation options:
+  • macOS:    brew install gh
+  • Windows:  winget install GitHub.CLI
+  • Linux:    sudo apt install gh  (or see https://github.com/cli/cli/blob/trunk/docs/install_linux.md)
+
+📝 After installing, authenticate with:
+  gh auth login
+
+💡 Alternative: Create PR manually at ${this.getCurrentBranchCompareURL()}`);
+    }
+  }
+
+  private async checkGitLabCLI(): Promise<void> {
+    try {
+      const { spawn } = await import('child_process');
+      
+      await new Promise<void>((resolve, reject) => {
+        const glabProcess = spawn('glab', ['--version'], { stdio: 'ignore' });
+        
+        glabProcess.on('close', (code) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error('GitLab CLI check failed'));
+          }
+        });
+        
+        glabProcess.on('error', (error) => {
+          reject(error);
+        });
+      });
+      
+    } catch (error) {
+      throw new Error(`GitLab CLI not found. Please install it to create MRs:
+
+🔧 Installation: See https://glab.readthedocs.io/en/latest/intro.html
+
+📝 After installing, authenticate with:
+  glab auth login
+
+💡 Alternative: Create MR manually at your GitLab repository`);
+    }
+  }
+
+  private getCurrentBranchCompareURL(): string {
+    // This could be enhanced to generate actual GitHub compare URLs
+    return 'https://github.com/your-repo/compare';
+  }
+
+  private async offerPRFallbackOptions(prDescription: any, context: SmartPRContext, flags: any): Promise<void> {
+    this.log('\n💡 PR Creation Alternatives:', 'info');
+    this.log('─'.repeat(40));
+    
+    try {
+      // Get repository info for URLs
+      const remoteInfo = await this.getRemoteRepositoryInfo();
+      
+      if (remoteInfo.provider === 'github') {
+        const compareURL = `https://github.com/${remoteInfo.owner}/${remoteInfo.repo}/compare/${flags['base-branch']}...${flags['head-branch']}`;
+        this.log(`\n🌐 1. Create PR manually in browser:`);
+        this.log(`   ${compareURL}`);
+        
+        this.log(`\n📋 2. Use this pre-written PR description:`);
+        const prBody = this.formatPRBodyForGitHub(prDescription, context);
+        this.log('   ─── Copy the text below ───');
+        this.log(`   Title: ${prDescription.title}`);
+        this.log(`\n${prBody}`);
+        this.log('   ─── End of PR description ───');
+        
+      } else if (remoteInfo.provider === 'gitlab') {
+        const compareURL = `https://gitlab.com/${remoteInfo.owner}/${remoteInfo.repo}/-/merge_requests/new?merge_request[source_branch]=${flags['head-branch']}&merge_request[target_branch]=${flags['base-branch']}`;
+        this.log(`\n🌐 1. Create MR manually in browser:`);
+        this.log(`   ${compareURL}`);
+        
+        this.log(`\n📋 2. Use this pre-written MR description:`);
+        const mrBody = this.formatPRBodyForGitLab(prDescription, context);
+        this.log('   ─── Copy the text below ───');
+        this.log(`   Title: ${prDescription.title}`);
+        this.log(`\n${mrBody}`);
+        this.log('   ─── End of MR description ───');
+      }
+      
+      // Save PR description to file for easy access
+      const fs = await import('fs').then(fs => fs.promises);
+      const path = await import('path');
+      const prFile = path.join(process.cwd(), 'pr-description.md');
+      
+      const fileContent = `# ${prDescription.title}\n\n${remoteInfo.provider === 'github' 
+        ? this.formatPRBodyForGitHub(prDescription, context)
+        : this.formatPRBodyForGitLab(prDescription, context)
+      }`;
+      
+      await fs.writeFile(prFile, fileContent);
+      this.log(`\n💾 3. PR description saved to file: ${prFile}`);
+      
+    } catch (error) {
+      this.log(`\n📝 Create PR manually using the description shown above`, 'info');
     }
   }
 
@@ -649,25 +779,47 @@ export default class PRCreate extends BaseCommand {
       // Prepare PR body
       const prBody = this.formatPRBodyForGitHub(prDescription, context);
       
-      // Build gh pr create command
-      const ghCommand = [
-        'gh', 'pr', 'create',
-        '--title', prDescription.title,
-        '--body', prBody,
-        '--head', flags['head-branch'],
-        '--base', flags['base-branch']
-      ];
+      // Execute the command using spawn to avoid shell interpretation issues
+      const { spawn } = await import('child_process');
       
-      if (flags.draft) {
-        ghCommand.push('--draft');
-      }
-      
-      // Execute the command
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      const result = await execAsync(ghCommand.join(' '));
+      const result = await new Promise<{stdout: string; stderr: string}>((resolve, reject) => {
+        const args = [
+          'pr', 'create',
+          '--title', prDescription.title,
+          '--body', prBody,
+          '--head', flags['head-branch'],
+          '--base', flags['base-branch']
+        ];
+        
+        if (flags.draft) {
+          args.push('--draft');
+        }
+        
+        const ghProcess = spawn('gh', args);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        ghProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        ghProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        ghProcess.on('close', (code) => {
+          if (code === 0) {
+            resolve({ stdout, stderr });
+          } else {
+            reject(new Error(`GitHub CLI failed with exit code ${code}: ${stderr || stdout}`));
+          }
+        });
+        
+        ghProcess.on('error', (error) => {
+          reject(new Error(`Failed to execute GitHub CLI: ${error.message}`));
+        });
+      });
       
       // Extract PR URL from output
       const prUrlMatch = result.stdout.match(/https:\/\/github\.com\/[^\s]+/);
@@ -689,25 +841,47 @@ export default class PRCreate extends BaseCommand {
       // Prepare MR description
       const mrDescription = this.formatPRBodyForGitLab(prDescription, context);
       
-      // Build glab mr create command
-      const glabCommand = [
-        'glab', 'mr', 'create',
-        '--title', prDescription.title,
-        '--description', mrDescription,
-        '--source-branch', flags['head-branch'],
-        '--target-branch', flags['base-branch']
-      ];
+      // Execute the command using spawn to avoid shell interpretation issues
+      const { spawn } = await import('child_process');
       
-      if (flags.draft) {
-        glabCommand.push('--draft');
-      }
-      
-      // Execute the command
-      const { exec } = await import('child_process');
-      const { promisify } = await import('util');
-      const execAsync = promisify(exec);
-      
-      const result = await execAsync(glabCommand.join(' '));
+      const result = await new Promise<{stdout: string; stderr: string}>((resolve, reject) => {
+        const args = [
+          'mr', 'create',
+          '--title', prDescription.title,
+          '--description', mrDescription,
+          '--source-branch', flags['head-branch'],
+          '--target-branch', flags['base-branch']
+        ];
+        
+        if (flags.draft) {
+          args.push('--draft');
+        }
+        
+        const glabProcess = spawn('glab', args);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        glabProcess.stdout.on('data', (data) => {
+          stdout += data.toString();
+        });
+        
+        glabProcess.stderr.on('data', (data) => {
+          stderr += data.toString();
+        });
+        
+        glabProcess.on('close', (code) => {
+          if (code === 0) {
+            resolve({ stdout, stderr });
+          } else {
+            reject(new Error(`GitLab CLI failed with exit code ${code}: ${stderr || stdout}`));
+          }
+        });
+        
+        glabProcess.on('error', (error) => {
+          reject(new Error(`Failed to execute GitLab CLI: ${error.message}`));
+        });
+      });
       
       // Extract MR URL from output
       const mrUrlMatch = result.stdout.match(/https:\/\/gitlab\.com\/[^\s]+/);
@@ -762,6 +936,67 @@ export default class PRCreate extends BaseCommand {
   private formatPRBodyForGitLab(prDescription: any, context: SmartPRContext): string {
     // GitLab uses the same markdown format as GitHub
     return this.formatPRBodyForGitHub(prDescription, context);
+  }
+
+  private async calculateStatsFromUnpushedCommits(): Promise<{
+    totalFiles: number;
+    totalInsertions: number;
+    totalDeletions: number;
+    changedLines: number;
+    complexity: 'low' | 'medium' | 'high' | 'critical';
+    duration: number;
+  }> {
+    try {
+      // Get commits ahead of remote
+      const git = (this.gitAnalyzer as any).git;
+      const unpushedCommits = await git.log(['HEAD', '--not', '--remotes', '--oneline']);
+      
+      if (unpushedCommits.total === 0) {
+        return {
+          totalFiles: 0,
+          totalInsertions: 0,
+          totalDeletions: 0,
+          changedLines: 0,
+          complexity: 'low',
+          duration: 0
+        };
+      }
+      
+      // Get diff stats for all unpushed commits combined
+      const diffStats = await git.diffSummary(['origin/HEAD...HEAD']);
+      
+      // Calculate complexity based on changes
+      let complexity: 'low' | 'medium' | 'high' | 'critical' = 'low';
+      const totalLines = diffStats.insertions + diffStats.deletions;
+      
+      if (totalLines > 1000 || diffStats.files.length > 20) {
+        complexity = 'critical';
+      } else if (totalLines > 500 || diffStats.files.length > 10) {
+        complexity = 'high';
+      } else if (totalLines > 100 || diffStats.files.length > 5) {
+        complexity = 'medium';
+      }
+      
+      return {
+        totalFiles: diffStats.files.length,
+        totalInsertions: diffStats.insertions,
+        totalDeletions: diffStats.deletions,
+        changedLines: totalLines,
+        complexity,
+        duration: 0
+      };
+      
+    } catch (error) {
+      // If we can't calculate stats, return safe defaults
+      return {
+        totalFiles: 1,
+        totalInsertions: 1,
+        totalDeletions: 0,
+        changedLines: 1,
+        complexity: 'low',
+        duration: 0
+      };
+    }
   }
 
   private async handleStagedChanges(session: DevelopmentSession): Promise<void> {

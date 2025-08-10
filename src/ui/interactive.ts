@@ -31,7 +31,6 @@ export class InteractiveUI {
         if (options.allowCustom) choices.push({ label: 'Custom refinement', type: 'custom' });
 
         const renderMenu = (selectedIndex: number) => {
-          console.log(chalk.cyan('\n🎯 Refinement Options:'));
           choices.forEach((choice, idx) => {
             const pointer = idx === selectedIndex ? chalk.green('>') : ' ';
             const displayIndex = choice.type === 'accept'
@@ -41,7 +40,8 @@ export class InteractiveUI {
                 : String((choice.index || 0) + 1);
             console.log(`${pointer} ${displayIndex}. ${choice.label}`);
           });
-          console.log(chalk.gray('\nUse ↑/↓ and Enter, or type a number. Esc to cancel.'));
+          console.log(''); 
+          console.log(chalk.gray('Use ↑/↓ and Enter, or type a number. Esc to cancel.'));
         };
 
         const supportsRawMode = typeof (process.stdin as any).setRawMode === 'function' && process.stdin.isTTY;
@@ -61,6 +61,7 @@ export class InteractiveUI {
           }
 
           let selected = 0;
+          console.log(chalk.cyan('🎯 Refinement Options:')); 
           renderMenu(selected);
 
           // Ignore an immediate stray Enter from a previous readline prompt
@@ -420,25 +421,33 @@ export class InteractiveUI {
 
   private clearAndRedrawMenu(menuItemCount: number, selectedIndex: number, renderMenu: (index: number) => void): void {
     try {
-      // Calculate lines to move up: menu items + header + instruction line
-      const linesToMoveUp = menuItemCount + 2;
-      
-      if (typeof (process.stdout as any).moveCursor === 'function' && typeof (process.stdout as any).clearScreenDown === 'function') {
-        // Move cursor up to the start of the menu
-        (process.stdout as any).moveCursor(0, -linesToMoveUp);
-        // Clear everything from cursor down
+      // Total lines printed includes:
+      // - 1 header line
+      // - menuItemCount items
+      // - 1 instructions line
+      const linesToClear = menuItemCount + 2;
+  
+      if (
+        typeof (process.stdout as any).moveCursor === 'function' &&
+        typeof (process.stdout as any).cursorTo === 'function' &&
+        typeof (process.stdout as any).clearScreenDown === 'function'
+      ) {
+        // Move cursor to the beginning of the header line
+        (process.stdout as any).moveCursor(0, -linesToClear);
+        (process.stdout as any).cursorTo(0);
         (process.stdout as any).clearScreenDown();
-        // Redraw the complete menu
         renderMenu(selectedIndex);
       } else {
-        // Fallback for terminals without cursor support
+        console.clear(); // full clear fallback if moveCursor not supported
+        console.log(chalk.cyan('🎯 Refinement Options:'));
         renderMenu(selectedIndex);
       }
     } catch (error) {
-      // Fallback to simple re-render if cursor manipulation fails
+      console.clear(); // absolute fallback
+      console.log(chalk.cyan('🎯 Refinement Options:'));
       renderMenu(selectedIndex);
     }
-  }
+  }  
 
   /**
    * Select from a list of options and return the selected index

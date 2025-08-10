@@ -17,5 +17,10 @@ export declare class SessionTracker {
     resetSession(): Promise<void>;
     private getCurrentCommit;
     hasSessionChanges(): Promise<boolean>;
+    /**
+     * Check if there are commits ahead of the remote branch
+     * This helps detect committed but unpushed changes
+     */
+    hasUnpushedCommits(): Promise<boolean>;
 }
 //# sourceMappingURL=session-tracker.d.ts.map

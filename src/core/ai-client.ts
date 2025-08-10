@@ -277,12 +277,19 @@ Conduct this review with the rigor and insight expected from a principal-level e
   }
 
   private buildCommitPrompt(context: CommitContext): string {
-    const changesStr = context.changes.map(change => 
+    // Prioritize code changes over docs when listing changes
+    const isDocs = (file: string) => ((/^docs\//i).test(file) || (/\.md$/i).test(file));
+    const codeChanges = context.changes.filter(c => !isDocs(c.file));
+    const docChanges = context.changes.filter(c => isDocs(c.file));
+    const orderedChanges = [...codeChanges, ...docChanges];
+    const changesStr = orderedChanges.map(change => 
       `File: ${change.file} (${change.type}, +${change.insertions} -${change.deletions})`
     ).join('\n');
 
     const patterns = context.repository.patterns;
     
+    const hasCodeChanges = codeChanges.length > 0;
+
     return `Analyze these git changes and generate a commit message:
 
 Repository: ${context.repository.name} (${context.repository.language}${context.repository.framework ? `, ${context.repository.framework}` : ''})
@@ -305,6 +312,7 @@ Generate a commit message that:
 2. Is under ${patterns.maxLength} characters
 3. Clearly describes what was changed and why
 4. Uses appropriate conventional commit type (feat, fix, docs, etc.)
+5. ${hasCodeChanges ? 'Prioritize and focus on CODE changes in title and body; mention documentation last if relevant.' : 'No code files changed: focus on documentation changes.'}
 
 Respond with JSON in this format:
 {

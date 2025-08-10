@@ -40,6 +40,7 @@ export default class PRCreate extends BaseCommand {
     private createGitLabPR;
     private formatPRBodyForGitHub;
     private formatPRBodyForGitLab;
+    private handleStagedChanges;
     private confirm;
 }
 //# sourceMappingURL=create.d.ts.map

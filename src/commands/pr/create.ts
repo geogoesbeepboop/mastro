@@ -68,8 +68,9 @@ export default class PRCreate extends BaseCommand {
     }),
     push: Flags.boolean({
       char: 'p',
-      description: 'push branch before creating PR',
-      default: false
+      description: 'legacy flag - push is now always performed before PR creation',
+      default: true,
+      hidden: true
     })
   };
 
@@ -106,10 +107,11 @@ export default class PRCreate extends BaseCommand {
         return;
       }
 
-      // Optional: Push branch first
-      if (flags.push) {
-        await this.pushBranch(flags['head-branch']);
-      }
+      // Auto-commit any staged changes before creating PR
+      await this.handleStagedChanges(session);
+
+      // Always push branch before creating PR (required for production PR creation)
+      await this.pushBranch(flags['head-branch']);
 
       // Pre-PR review (unless skipped)
       if (!flags['skip-review']) {
@@ -570,8 +572,12 @@ export default class PRCreate extends BaseCommand {
       const remoteInfo = await this.getRemoteRepositoryInfo();
       
       if (remoteInfo.provider === 'github') {
+        // Check GitHub CLI availability first
+        await this.checkGitHubCLI();
         await this.createGitHubPR(prDescription, context, flags, remoteInfo);
       } else if (remoteInfo.provider === 'gitlab') {
+        // Check GitLab CLI availability first  
+        await this.checkGitLabCLI();
         await this.createGitLabPR(prDescription, context, flags, remoteInfo);
       } else {
         throw new Error(`Unsupported repository provider: ${remoteInfo.provider}. Only GitHub and GitLab are currently supported.`);
@@ -756,6 +762,28 @@ export default class PRCreate extends BaseCommand {
   private formatPRBodyForGitLab(prDescription: any, context: SmartPRContext): string {
     // GitLab uses the same markdown format as GitHub
     return this.formatPRBodyForGitHub(prDescription, context);
+  }
+
+  private async handleStagedChanges(session: DevelopmentSession): Promise<void> {
+    // Check if there are staged changes that need to be committed
+    if (session.stagedChanges.length === 0) {
+      return; // Nothing to commit
+    }
+
+    this.log('\n📝 Staged changes detected - committing before PR creation');
+    
+    try {
+      // Import and use the commit command to handle the staged changes
+      const Commit = (await import('../commit.js')).default;
+      const commitCommand = new Commit(['--interactive'], this.config);
+      await commitCommand.init();
+      await commitCommand.run();
+      
+      this.success(`Staged changes committed successfully`);
+      
+    } catch (error) {
+      throw new Error(`Failed to commit staged changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private async confirm(message: string): Promise<boolean> {

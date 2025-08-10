@@ -10,6 +10,7 @@ import Review from './review.js';
 import Commit from './commit.js';
 import Analytics from './analytics.js';
 import DocsIndex from './docs/index.js';
+import PRCreate from './pr/create.js';
 import type {WorkflowContext, BoundaryMetrics, WorkflowCheckpoint} from '../types/index.js';
 import type {StagingStrategy} from '../core/commit-boundary-analyzer.js';
 
@@ -347,15 +348,14 @@ export default class Flow extends BaseCommand {
   }
 
   private async completeWorkflow(context: WorkflowContext, flags: any): Promise<void> {
-    console.log('\n' + this.renderer.renderTitle('🎉 Workflow Complete!'));
-
     // Step 5: Create PR (optional)
     if (!context.settings.skipPR) {
       try {
         await this.createPullRequest();
         await this.workflowManager.saveCheckpoint('pr', { created: true });
       } catch (error) {
-        this.log(`Warning: PR creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warn');
+        this.log(`✖ PR creation failed`, 'error');
+        this.log(`⚠ Warning: PR creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warn');
       }
     }
 
@@ -371,6 +371,9 @@ export default class Flow extends BaseCommand {
     // Clean up workflow context
     await this.workflowManager.clearContext();
     this.success('Workflow context cleaned up');
+
+    // Final celebration message at the very end
+    console.log('\n' + this.renderer.renderTitle('🎉 mastro flow complete!'));
   }
 
   private async stageBoundaryFiles(boundary: any): Promise<void> {
@@ -550,14 +553,18 @@ export default class Flow extends BaseCommand {
   }
 
   private async createPullRequest(): Promise<void> {
-    this.startSpinner('Creating pull request...');
-    
     try {
-      // PR command is not implemented in mastro yet
-      throw new Error('Pull request command not available in mastro yet');
+      // Use the actual PR create command
+      // PR create will handle: 
+      // 1. Detecting changes (staged, working, or unpushed commits)
+      // 2. Auto-committing staged changes if needed  
+      // 3. Pushing commits to remote
+      // 4. Creating the PR
+      const prCommand = new PRCreate(['--skip-review'], this.config);
+      await prCommand.init();
+      await prCommand.run();
       
     } catch (error) {
-      this.stopSpinner(false, 'PR creation failed');
       throw new Error(`PR creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

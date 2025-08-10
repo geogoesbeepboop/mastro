@@ -108,8 +108,11 @@ export default class Commit extends BaseCommand {
       console.log('\n' + this.renderer.renderCommitMessage(commitMessage));
 
       // Interactive refinement loop if enabled
+      let userAcceptedAsIs = false;
       if (flags.interactive || this.mastroConfig.ui.interactive) {
-        commitMessage = await this.handleCommitRefinement(commitMessage, context, flags);
+        const refinementResult = await this.handleCommitRefinement(commitMessage, context, flags);
+        commitMessage = refinementResult.message;
+        userAcceptedAsIs = refinementResult.acceptedAsIs;
       }
 
       // Dry run - just display, don't commit
@@ -118,12 +121,14 @@ export default class Commit extends BaseCommand {
         return;
       }
 
-      // Confirm before committing
-      const shouldCommit = await this.interactiveUI.confirmAction('Apply this commit message?', true);
+      // Skip confirmation if user explicitly selected "Accept as is" or not in interactive mode
+      if (!userAcceptedAsIs && (flags.interactive || this.mastroConfig.ui.interactive)) {
+        const shouldCommit = await this.interactiveUI.confirmAction('Apply this commit message?', true);
 
-      if (!shouldCommit) {
-        this.log('Commit cancelled', 'info');
-        return;
+        if (!shouldCommit) {
+          this.log('Commit cancelled', 'info');
+          return;
+        }
       }
 
       // Apply the commit
@@ -134,7 +139,10 @@ export default class Commit extends BaseCommand {
         await this.learnFromCommit(commitMessage, context);
       }
 
-      this.success('Commit created successfully!');
+      // Success message will be shown by parent workflow if running as subcommand
+      if (!this.isSubcommand) {
+        this.success('Commit created successfully!');
+      }
 
     } catch (error) {
       await this.handleError(error, 'create commit');
@@ -150,10 +158,11 @@ export default class Commit extends BaseCommand {
     initialMessage: CommitMessage,
     context: any,
     flags: any
-  ): Promise<CommitMessage> {
+  ): Promise<{message: CommitMessage; acceptedAsIs: boolean}> {
     const refinementSuggestions = createRefinementSuggestions('commit');
     let currentMessage = initialMessage;
     let continueRefining = true;
+    let acceptedAsIs = false;
 
     while (continueRefining) {
       const refinement = await this.interactiveUI.promptForRefinement({
@@ -164,6 +173,7 @@ export default class Commit extends BaseCommand {
 
       if (!refinement) {
         // User selected "Accept as is"
+        acceptedAsIs = true;
         continueRefining = false;
         break;
       }
@@ -187,7 +197,7 @@ export default class Commit extends BaseCommand {
       }
     }
 
-    return currentMessage;
+    return {message: currentMessage, acceptedAsIs};
   }
 
   private async refineCommitMessage(
@@ -231,7 +241,7 @@ export default class Commit extends BaseCommand {
         const git = this.gitAnalyzer as any; // Access the underlying git instance
         await git.git.commit(commitText);
       },
-      'Commit created',
+      this.isSubcommand ? undefined : 'Commit created',
       'Failed to create commit'
     );
   }

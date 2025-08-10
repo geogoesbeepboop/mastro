@@ -55,9 +55,19 @@ export class InteractiveUI {
 
           emitKeypressEvents(process.stdin);
           (process.stdin as any).setRawMode(true);
+          // Ensure stdin is actively emitting keypress events
+          if (typeof (process.stdin as any).resume === 'function') {
+            (process.stdin as any).resume();
+          }
 
           let selected = 0;
           renderMenu(selected);
+
+          // Ignore an immediate stray Enter from a previous readline prompt
+          let suppressInitialEnter = true;
+          const suppressTimer = setTimeout(() => {
+            suppressInitialEnter = false;
+          }, 120);
 
           const onKeypress = (_str: string, key: any) => {
             if (!key) return;
@@ -73,9 +83,13 @@ export class InteractiveUI {
               return;
             }
             if (key.name === 'return' || key.name === 'enter') {
+              if (suppressInitialEnter) {
+                return;
+              }
               const chosen = choices[selected];
               // Clean up keypress handler and raw mode first
               this.cleanupRawMode(onKeypress);
+              clearTimeout(suppressTimer);
               console.log('');
               
               if (chosen.type === 'accept') {
@@ -113,6 +127,7 @@ export class InteractiveUI {
             // Cancel -> accept as is
             if (key.name === 'escape' || (key.ctrl && key.name === 'c')) {
               this.cleanupRawMode(onKeypress);
+              clearTimeout(suppressTimer);
               console.log('\nUsing original message.');
               resolve(null);
             }
@@ -135,8 +150,6 @@ export class InteractiveUI {
           resolve(null);
         });
 
-        // console.log(chalk.cyan('\n🎯 Refinement Options:'));
-        // console.log('  0. Accept as is');
         baseSuggestions.forEach((suggestion, index) => {
           console.log(`  ${index + 1}. ${suggestion}`);
         });

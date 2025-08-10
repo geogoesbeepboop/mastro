@@ -29,14 +29,23 @@ export default class Commit extends BaseCommand {
     learn: Flags.boolean({
       description: 'learn from this commit for future suggestions',
       default: false
+    }),
+    'subcommand-context': Flags.boolean({
+      description: 'internal flag indicating command is running as subcommand',
+      default: false,
+      hidden: true
     })
   };
 
   private renderer!: UIRenderer;
   private interactiveUI!: InteractiveUI;
+  private isSubcommand: boolean = false;
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(Commit);
+
+    // Detect if we're being called as a subcommand (e.g., from flow)
+    this.isSubcommand = flags['subcommand-context'];
 
     try {
       // Initialize UI components
@@ -47,11 +56,12 @@ export default class Commit extends BaseCommand {
       await this.ensureGitRepository();
 
       // Check for staged changes
-      this.startSpinner('Analyzing staged changes...');
-      const context = await this.gitAnalyzer.buildCommitContext(true);
+      const context = await this.withSpinner(
+        'Analyzing staged changes...',
+        () => this.gitAnalyzer.buildCommitContext(true)
+      );
       
       if (context.changes.length === 0) {
-        this.stopSpinner(false);
         this.log('No staged changes found. Stage some changes and try again.', 'warn');
         return;
       }
@@ -97,31 +107,9 @@ export default class Commit extends BaseCommand {
       // Display the generated commit message
       console.log('\n' + this.renderer.renderCommitMessage(commitMessage));
 
-      // Interactive refinement if enabled
+      // Interactive refinement loop if enabled
       if (flags.interactive || this.mastroConfig.ui.interactive) {
-        const refinementSuggestions = createRefinementSuggestions('commit');
-        
-        const refinement = await this.interactiveUI.promptForRefinement({
-          message: 'Would you like to refine this commit message?',
-          suggestions: refinementSuggestions,
-          allowCustom: true
-        });
-
-        if (refinement) {
-          this.startSpinner('Refining commit message...');
-          
-          try {
-            // Create a refined context with the refinement instruction
-            const refinedMessage = await this.refineCommitMessage(commitMessage, refinement, context, flags);
-            this.stopSpinner(true, 'Commit message refined');
-            
-            console.log('\n' + this.renderer.renderCommitMessage(refinedMessage));
-            commitMessage = refinedMessage;
-          } catch (error) {
-            this.stopSpinner(false, 'Failed to refine commit message');
-            this.log('Using original message', 'warn');
-          }
-        }
+        commitMessage = await this.handleCommitRefinement(commitMessage, context, flags);
       }
 
       // Dry run - just display, don't commit
@@ -131,10 +119,7 @@ export default class Commit extends BaseCommand {
       }
 
       // Confirm before committing
-      const shouldCommit = await this.interactiveUI.confirmAction(
-        'Apply this commit message?',
-        true
-      );
+      const shouldCommit = await this.interactiveUI.confirmAction('Apply this commit message?', true);
 
       if (!shouldCommit) {
         this.log('Commit cancelled', 'info');
@@ -154,8 +139,55 @@ export default class Commit extends BaseCommand {
     } catch (error) {
       await this.handleError(error, 'create commit');
     } finally {
-      this.interactiveUI.cleanup();
+      // Skip cleanup when running as subcommand to prevent interfering with parent process
+      if (!this.isSubcommand) {
+        this.interactiveUI.cleanup();
+      }
     }
+  }
+
+  private async handleCommitRefinement(
+    initialMessage: CommitMessage,
+    context: any,
+    flags: any
+  ): Promise<CommitMessage> {
+    const refinementSuggestions = createRefinementSuggestions('commit');
+    let currentMessage = initialMessage;
+    let continueRefining = true;
+
+    while (continueRefining) {
+      const refinement = await this.interactiveUI.promptForRefinement({
+        message: 'Refine commit message',
+        suggestions: refinementSuggestions,
+        allowCustom: true
+      });
+
+      if (!refinement) {
+        // User selected "Accept as is"
+        continueRefining = false;
+        break;
+      }
+
+      // Show brief spinner only while generating refined commit
+      try {
+        const refinedMessage = await this.withSpinner(
+          'Refining commit message...',
+          () => this.refineCommitMessage(currentMessage, refinement, context, flags)
+        );
+        
+        // Display refined commit cleanly
+        console.log('\n' + this.renderer.renderCommitMessage(refinedMessage));
+        currentMessage = refinedMessage;
+        
+        // Continue loop to show refinement options again automatically
+      } catch (error) {
+        this.log('Failed to refine commit message', 'error');
+        this.log('Using previous message', 'warn');
+        continueRefining = false;
+      }
+    }
+
+    return currentMessage;
   }
 
   private async refineCommitMessage(
@@ -187,23 +219,21 @@ export default class Commit extends BaseCommand {
   }
 
   private async applyCommit(message: CommitMessage): Promise<void> {
-    this.startSpinner('Creating commit...');
-    
-    try {
-      // Build the complete commit message
-      const commitText = message.body 
-        ? `${message.title}\n\n${message.body}` 
-        : message.title;
+    // Build the complete commit message
+    const commitText = message.body 
+      ? `${message.title}\n\n${message.body}` 
+      : message.title;
 
-      // Execute git commit
-      const git = this.gitAnalyzer as any; // Access the underlying git instance
-      await git.git.commit(commitText);
-      
-      this.stopSpinner(true, 'Commit created');
-    } catch (error) {
-      this.stopSpinner(false, 'Failed to create commit');
-      throw error;
-    }
+    // Execute git commit with spinner
+    await this.withSpinner(
+      'Creating commit...',
+      async () => {
+        const git = this.gitAnalyzer as any; // Access the underlying git instance
+        await git.git.commit(commitText);
+      },
+      'Commit created',
+      'Failed to create commit'
+    );
   }
 
   private async learnFromCommit(message: CommitMessage, context: any): Promise<void> {

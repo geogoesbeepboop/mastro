@@ -375,7 +375,9 @@ export class UIRenderer {
       medium: chalk.yellow,
       high: chalk.red
     };
-    return colors[risk as keyof typeof colors]?.(risk.toUpperCase()) || risk;
+    const safeRisk = (typeof risk === 'string' ? risk : 'medium').toLowerCase();
+    const colorFn = colors[safeRisk as keyof typeof colors];
+    return colorFn ? colorFn(safeRisk.toUpperCase()) : safeRisk;
   }
 
   private renderScope(scope: string): string {
@@ -384,7 +386,9 @@ export class UIRenderer {
       module: chalk.yellow,
       system: chalk.red
     };
-    return colors[scope as keyof typeof colors]?.(scope.toUpperCase()) || scope;
+    const safeScope = (typeof scope === 'string' ? scope : 'local').toLowerCase();
+    const colorFn = colors[safeScope as keyof typeof colors];
+    return colorFn ? colorFn(safeScope.toUpperCase()) : safeScope;
   }
 
   private renderRating(rating: string): string {
@@ -394,7 +398,50 @@ export class UIRenderer {
       'needs-work': chalk.yellow,
       'major-issues': chalk.red
     };
-    return colors[rating as keyof typeof colors]?.(rating.toUpperCase()) || rating;
+    
+    // Normalize rating with type checking
+    const normalizedRating = this.normalizeRating(rating);
+    const colorFn = colors[normalizedRating as keyof typeof colors];
+    
+    return colorFn ? colorFn(normalizedRating.toUpperCase()) : normalizedRating;
+  }
+
+  protected normalizeRating(rating: any): string {
+    // Type guard: ensure rating is a string
+    if (typeof rating !== 'string' || !rating) {
+      // AI-powered fallback: infer rating from common patterns
+      if (typeof rating === 'number') {
+        if (rating >= 4.5) return 'excellent';
+        if (rating >= 3.5) return 'good';
+        if (rating >= 2.0) return 'needs-work';
+        return 'major-issues';
+      }
+      
+      // Default fallback for unknown types
+      return 'needs-work';
+    }
+
+    // Normalize known rating strings
+    const lowerRating = rating.toLowerCase().trim();
+    
+    // Map common variations to standard ratings
+    const ratingMap: Record<string, string> = {
+      'excellent': 'excellent',
+      'great': 'excellent',
+      'outstanding': 'excellent',
+      'good': 'good',
+      'okay': 'good',
+      'fair': 'good',
+      'needs work': 'needs-work',
+      'needs-work': 'needs-work',
+      'poor': 'needs-work',
+      'major issues': 'major-issues',
+      'major-issues': 'major-issues',
+      'bad': 'major-issues',
+      'critical': 'major-issues'
+    };
+
+    return ratingMap[lowerRating] || 'needs-work';
   }
 
   private renderSuggestion(suggestion: ReviewSuggestion, isBlocker = false): string {
@@ -410,7 +457,7 @@ export class UIRenderer {
     const output: string[] = [];
     const location = suggestion.line ? `${suggestion.file}:${suggestion.line}` : suggestion.file;
     
-    output.push(`  ${icon} ${severityColor(suggestion.severity.toUpperCase())} in ${chalk.cyan(location)}`);
+    output.push(`  ${icon} ${severityColor((suggestion.severity || 'info').toUpperCase())} in ${chalk.cyan(location)}`);
     output.push(`     ${suggestion.message}`);
     
     if (suggestion.suggestion) {
@@ -465,8 +512,11 @@ export class UIRenderer {
   }
 
   renderPriority(priority: 'high' | 'medium' | 'low'): string {
+    // Ensure priority is valid
+    const validPriority = priority || 'medium';
+    
     if (!this.config.ui.colors) {
-      return priority.toUpperCase();
+      return validPriority.toUpperCase();
     }
 
     const colors = {
@@ -474,7 +524,7 @@ export class UIRenderer {
       medium: chalk.yellow,
       low: chalk.green
     };
-    return colors[priority](priority.toUpperCase());
+    return colors[validPriority](validPriority.toUpperCase());
   }
 
   renderWarning(text: string): string {

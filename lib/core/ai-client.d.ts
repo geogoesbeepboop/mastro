@@ -14,6 +14,8 @@ export declare class AIClient {
     explainChanges(context: CommitContext): Promise<DiffExplanation>;
     createPRDescription(context: CommitContext): Promise<PRDescription>;
     reviewCode(context: CommitContext, persona: ReviewPersona): Promise<CodeReview>;
+    generateDocumentation(type: string, context: any, config: any): Promise<string>;
+    performCustomAnalysis(prompt: string, instructions: string, maxTokens?: number, temperature?: number): Promise<string | null>;
 }
 export {};
 //# sourceMappingURL=ai-client.d.ts.map

@@ -11,6 +11,7 @@ export default class Review extends BaseCommand {
         stream: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'actionable-only': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         priority: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        'boundary-context': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         config: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         verbose: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'no-cache': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
@@ -22,6 +23,8 @@ export default class Review extends BaseCommand {
     private streamingRenderer;
     private loadingManager;
     private interactiveUI;
+    private workflowManager;
+    private suppressNextActions;
     run(): Promise<void>;
     private getOrCreateSession;
     private displaySessionOverview;
@@ -46,5 +49,11 @@ export default class Review extends BaseCommand {
     private formatLearningResources;
     private getPriorityWeight;
     private getPriorityIcon;
+    private handleBoundaryContextReview;
+    private displayBoundaryOverview;
+    private createBoundarySession;
+    private displayWorkflowNextSteps;
+    private handleBlockerWorkflow;
+    private handleSuccessWorkflow;
 }
 //# sourceMappingURL=review.d.ts.map

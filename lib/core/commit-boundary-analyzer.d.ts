@@ -40,6 +40,7 @@ export declare class CommitBoundaryAnalyzer {
     private config;
     private semanticAnalyzer;
     private impactAnalyzer;
+    private aiClient;
     constructor(config: MastroConfig, semanticAnalyzer: SemanticAnalyzer, impactAnalyzer: ImpactAnalyzer);
     /**
      * Main entry point: analyze all working changes and detect commit boundaries
@@ -77,6 +78,10 @@ export declare class CommitBoundaryAnalyzer {
     private determinePriority;
     private calculateComplexity;
     private detectTheme;
+    private isDocumentationFile;
+    private isTestFile;
+    private isConfigFile;
+    private isBugFixFile;
     private findFileDependencies;
     private findBoundaryDependencies;
     private extractFunctionNames;
@@ -93,5 +98,8 @@ export declare class CommitBoundaryAnalyzer {
     private identifyPotentialIssues;
     private determineOptimalStrategy;
     private assessOverallRisk;
+    private performAIBoundaryAnalysis;
+    private groupByImpactWithAI;
+    private aiCategorizeFile;
 }
 //# sourceMappingURL=commit-boundary-analyzer.d.ts.map

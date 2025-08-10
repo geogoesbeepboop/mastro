@@ -39,35 +39,56 @@ export class ReviewEngine {
   async reviewSession(session: DevelopmentSession, persona?: ReviewPersona): Promise<SessionReview> {
     const reviewPersona = persona || this.config.team.reviewPersona;
     
-    // Combine all changes for comprehensive analysis
-    const allChanges = [...session.workingChanges, ...session.stagedChanges];
+    // For boundary context reviews, only analyze staged changes (which are the boundary files)
+    // For regular reviews, analyze all changes
+    const isBoundaryReview = session.id.startsWith('boundary-');
+    const allChanges = isBoundaryReview 
+      ? session.stagedChanges  // Only boundary files
+      : [...session.workingChanges, ...session.stagedChanges]; // All files
     
     if (allChanges.length === 0) {
       return this.createEmptySessionReview(session, reviewPersona);
     }
 
-    // Convert session to CommitContext for existing analyzers
-    const commitContext = this.sessionToCommitContext(session);
+    // Convert session to CommitContext for existing analyzers - use only the relevant changes
+    const commitContext = this.sessionToCommitContext({
+      ...session,
+      workingChanges: isBoundaryReview ? [] : session.workingChanges,
+      stagedChanges: allChanges
+    });
     
     // Get traditional code review from AI
     const baseReview = await this.aiClient.reviewCode(commitContext, reviewPersona);
     
-    // Enhance with session-specific analysis
-    const sessionAnalysis = await this.analyzeSessionChanges(session, reviewPersona);
+    // Enhance with session-specific analysis using only the relevant changes
+    const focusedSession = {
+      ...session,
+      workingChanges: isBoundaryReview ? [] : session.workingChanges,
+      stagedChanges: allChanges,
+      cumulativeStats: {
+        ...session.cumulativeStats,
+        totalFiles: allChanges.length,
+        totalInsertions: allChanges.reduce((sum, change) => sum + change.insertions, 0),
+        totalDeletions: allChanges.reduce((sum, change) => sum + change.deletions, 0),
+        changedLines: allChanges.reduce((sum, change) => sum + change.insertions + change.deletions, 0)
+      }
+    };
+    
+    const sessionAnalysis = await this.analyzeSessionChanges(focusedSession, reviewPersona);
     
     // Generate actionable items
-    const actionableItems = this.generateActionableItems(session, baseReview, sessionAnalysis);
+    const actionableItems = this.generateActionableItems(focusedSession, baseReview, sessionAnalysis);
     
     // Create workflow suggestions
-    const workflowSuggestions = this.generateWorkflowSuggestions(session, sessionAnalysis);
+    const workflowSuggestions = this.generateWorkflowSuggestions(focusedSession, sessionAnalysis);
     
     // Generate learning points
-    const learningPoints = this.generateLearningPoints(session, baseReview, sessionAnalysis);
+    const learningPoints = this.generateLearningPoints(focusedSession, baseReview, sessionAnalysis);
 
     return {
       ...baseReview,
       sessionId: session.id,
-      scope: this.determineScope(session),
+      scope: this.determineScope(focusedSession),
       actionableItems,
       learningPoints,
       workflowSuggestions
@@ -75,6 +96,7 @@ export class ReviewEngine {
   }
 
   private async analyzeSessionChanges(session: DevelopmentSession, persona: ReviewPersona) {
+    // Use the changes that are actually in this session (respects boundary context)
     const allChanges = [...session.workingChanges, ...session.stagedChanges];
     
     // Semantic analysis

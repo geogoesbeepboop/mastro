@@ -6,6 +6,7 @@ export declare class GitAnalyzer {
     isRepository(): Promise<boolean>;
     getRepoRoot(): Promise<string>;
     getCurrentBranch(): Promise<string>;
+    getCurrentCommit(): Promise<string>;
     getStagedChanges(): Promise<GitChange[]>;
     getWorkingChanges(): Promise<GitChange[]>;
     getBranchChanges(branch: string, baseBranch?: string): Promise<GitChange[]>;

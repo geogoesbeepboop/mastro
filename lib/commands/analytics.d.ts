@@ -23,6 +23,15 @@ export default class Analytics extends BaseCommand {
     private outputMarkdown;
     private displayInsights;
     private enableFocusMode;
+    private initializeFocusSession;
+    private runFocusSessionMonitoring;
+    private updateFocusMetrics;
+    private displayFocusStatus;
+    private checkFlowState;
+    private completeFocusSession;
+    private calculateSessionQuality;
+    private saveFocusSessionData;
+    private sleep;
     private filterSessionsByPeriod;
     private calculateAverageQuality;
     private findCommonPatterns;

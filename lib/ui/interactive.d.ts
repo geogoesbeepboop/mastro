@@ -14,6 +14,9 @@ export declare class InteractiveUI {
     getTextInput(prompt: string, defaultValue?: string): Promise<string | null>;
     showProgressiveEnhancement(initialMessage: CommitMessage, enhancedMessage: CommitMessage, onSelect: (message: CommitMessage) => void): Promise<void>;
     cleanup(): void;
+    private cleanupRawMode;
+    private handleCustomRefinement;
+    private clearAndRedrawMenu;
     /**
      * Select from a list of options and return the selected index
      */

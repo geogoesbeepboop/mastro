@@ -166,41 +166,41 @@ export class StreamingRenderer extends UIRenderer {
 
   private renderPartialCommitMessage(partial: Partial<CommitMessage>): void {
     if (partial.title) {
-      process.stdout.write('\r' + ' '.repeat(100) + '\r'); // Clear line
+      this.clearCurrentLine();
       process.stdout.write(chalk.dim(`Preview: ${partial.title}`));
     }
   }
 
   private renderFinalCommitMessage(message: CommitMessage): void {
-    process.stdout.write('\r' + ' '.repeat(100) + '\r'); // Clear preview line
+    this.clearCurrentLine();
     console.log(this.renderCommitMessage(message));
   }
 
   private renderPartialExplanation(partial: Partial<DiffExplanation>): void {
     if (partial.summary) {
-      process.stdout.write('\r' + ' '.repeat(100) + '\r');
+      this.clearCurrentLine();
       process.stdout.write(chalk.dim(`Preview: ${partial.summary.substring(0, 80)}...`));
     }
   }
 
   private renderFinalExplanation(explanation: DiffExplanation): void {
-    process.stdout.write('\r' + ' '.repeat(100) + '\r');
+    this.clearCurrentLine();
     console.log(this.renderDiffExplanation(explanation));
   }
 
   private renderPartialReview(partial: Partial<SessionReview>): void {
     // Show progressive review information
     if (partial.overall?.summary) {
-      process.stdout.write('\r' + ' '.repeat(100) + '\r');
+      this.clearCurrentLine();
       process.stdout.write(chalk.dim(`Preview: ${partial.overall.summary.substring(0, 60)}...`));
     } else if (partial.suggestions && partial.suggestions.length > 0) {
-      process.stdout.write('\r' + ' '.repeat(100) + '\r');
+      this.clearCurrentLine();
       process.stdout.write(chalk.dim(`Found ${partial.suggestions.length} suggestions...`));
     }
   }
 
   private renderFinalReview(review: SessionReview): void {
-    process.stdout.write('\r' + ' '.repeat(100) + '\r');
+    this.clearCurrentLine();
     this.renderSessionReview(review);
   }
 
@@ -236,13 +236,11 @@ export class StreamingRenderer extends UIRenderer {
     }
 
     // Blockers (critical)
-    if (review.blockers.length > 0) {
+    const renderedBlockers = review.blockers.map(b => this.renderBlocker(b)).filter(Boolean);
+    if (renderedBlockers.length > 0) {
       output.push(chalk.red.bold('🚫 Blockers (Must Fix)'));
       output.push(chalk.gray('─'.repeat(30)));
-      
-      for (const blocker of review.blockers) {
-        output.push(this.renderBlocker(blocker));
-      }
+      output.push(...renderedBlockers);
       output.push('');
     }
 
@@ -351,8 +349,13 @@ export class StreamingRenderer extends UIRenderer {
   }
 
   private renderBlocker(blocker: any): string {
+    // Suppress generic or low-signal blocker messages
+    if (!blocker.message || blocker.message === 'Issue detected' || (typeof blocker.message === 'string' && blocker.message.trim().length < 15)) {
+      return '';
+    }
+    const message = blocker.message;
     return [
-      `${chalk.red.bold('🚫')} ${chalk.red.bold(blocker.message)}`,
+      `${chalk.red.bold('🚫')} ${chalk.red.bold(message)}`,
       blocker.file ? `   ${chalk.gray(`${blocker.file}${blocker.line ? `:${blocker.line}` : ''}`)}` : '',
       blocker.suggestion ? `   ${chalk.cyan(`Fix: ${blocker.suggestion}`)}` : '',
       ''
@@ -376,8 +379,9 @@ export class StreamingRenderer extends UIRenderer {
 
     const color = severityColors[suggestion.severity as keyof typeof severityColors] || 'gray';
     const icon = typeIcons[suggestion.type as keyof typeof typeIcons] || '💡';
+    const message = suggestion.message || 'Suggestion detected';
 
-    let output = `${icon} ${chalk[color](suggestion.message)}`;
+    let output = `${icon} ${chalk[color](message)}`;
     
     if (suggestion.file) {
       const fileDisplay = suggestion.line ? `${suggestion.file}:${suggestion.line}` : suggestion.file;
@@ -406,11 +410,61 @@ export class StreamingRenderer extends UIRenderer {
       'major-issues': '❌'
     };
 
-    const color = ratingColors[rating as keyof typeof ratingColors] || 'gray';
-    const icon = ratingIcons[rating as keyof typeof ratingIcons] || '❓';
-    const confidenceBar = '█'.repeat(Math.round(confidence * 10));
+    // Normalize rating with type checking and AI-powered fallback
+    const normalizedRating = this.normalizeRating(rating);
+    
+    const color = ratingColors[normalizedRating as keyof typeof ratingColors] || 'gray';
+    const icon = ratingIcons[normalizedRating as keyof typeof ratingIcons] || '❓';
+    
+    // Handle invalid confidence values
+    const validConfidence = (typeof confidence === 'number' && !isNaN(confidence) && confidence >= 0 && confidence <= 1);
+    
+    const displayRating = normalizedRating.toUpperCase();
+    
+    if (validConfidence) {
+      const confidenceBar = '█'.repeat(Math.round(confidence * 10));
+      return `${icon} ${chalk[color].bold(displayRating)} (${Math.round(confidence * 100)}% confidence: ${chalk.gray(confidenceBar)})`;
+    } else {
+      return `${icon} ${chalk[color].bold(displayRating)}`;
+    }
+  }
 
-    return `${icon} ${chalk[color].bold(rating.toUpperCase())} (${Math.round(confidence * 100)}% confidence: ${chalk.gray(confidenceBar)})`;
+  protected normalizeRating(rating: any): string {
+    // Type guard: ensure rating is a string
+    if (typeof rating !== 'string' || !rating) {
+      // AI-powered fallback: infer rating from common patterns
+      if (typeof rating === 'number') {
+        if (rating >= 4.5) return 'excellent';
+        if (rating >= 3.5) return 'good';
+        if (rating >= 2.0) return 'needs-work';
+        return 'major-issues';
+      }
+      
+      // Default fallback for unknown types
+      return 'needs-work';
+    }
+
+    // Normalize known rating strings
+    const lowerRating = rating.toLowerCase().trim();
+    
+    // Map common variations to standard ratings
+    const ratingMap: Record<string, string> = {
+      'excellent': 'excellent',
+      'great': 'excellent',
+      'outstanding': 'excellent',
+      'good': 'good',
+      'okay': 'good',
+      'fair': 'good',
+      'needs work': 'needs-work',
+      'needs-work': 'needs-work',
+      'poor': 'needs-work',
+      'major issues': 'major-issues',
+      'major-issues': 'major-issues',
+      'bad': 'major-issues',
+      'critical': 'major-issues'
+    };
+
+    return ratingMap[lowerRating] || 'needs-work';
   }
 
   // Type guards
@@ -424,6 +478,11 @@ export class StreamingRenderer extends UIRenderer {
 
   private isSessionReview(obj: any): obj is SessionReview {
     return obj && typeof obj.sessionId === 'string' && obj.overall;
+  }
+
+  private clearCurrentLine(): void {
+    // Use ANSI escape codes for smooth line clearing without flickering
+    process.stdout.write('\r\u001b[K'); // Move to beginning of line and clear to end of line
   }
 
   cleanup(): void {

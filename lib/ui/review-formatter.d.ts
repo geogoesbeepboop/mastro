@@ -9,6 +9,7 @@ export declare class ReviewFormatter {
     private formatActionableItemsTerminal;
     private formatWorkflowSuggestionsTerminal;
     private formatOverallRating;
+    protected normalizeRating(rating: any): string;
     private formatSuggestionTerminal;
     private formatBlockerTerminal;
     private formatMarkdown;

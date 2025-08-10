@@ -41,6 +41,11 @@ export class GitAnalyzer {
     return status.current || 'main';
   }
 
+  async getCurrentCommit(): Promise<string> {
+    const log = await this.git.log(['-1']);
+    return log.latest?.hash || '';
+  }
+
   async getStagedChanges(): Promise<GitChange[]> {
     const diff = await this.git.diff(['--staged', '--numstat']);
     if (!diff) return [];

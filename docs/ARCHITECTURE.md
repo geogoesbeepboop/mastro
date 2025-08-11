@@ -76,6 +76,403 @@ The Documentation Engine leverages Mastro's existing infrastructure:
 4. **README Generation**: Project overview, quick start guides, key metrics
 5. **Component Documentation**: Class structures, interfaces, relationships
 
+## 🌊 Workflow Orchestration Architecture
+
+### Overview
+The Workflow Orchestration system represents a significant architectural advancement, transforming Mastro from individual command execution to comprehensive workflow automation. This system orchestrates the entire development process from code analysis to PR creation.
+
+### Core Components
+
+```mermaid
+flowchart TB
+    subgraph "Workflow Orchestration Layer"
+        A[mastro flow] --> B[WorkflowOrchestrator]
+        B --> C[WorkflowStepManager]
+        C --> D[ValidationEngine]
+        C --> E[CheckpointManager]
+        C --> F[ErrorRecoverySystem]
+    end
+    
+    subgraph "Workflow Steps"
+        G[CodeAnalysisStep] --> H[BoundaryReviewStep]
+        H --> I[CommitsStep] 
+        I --> J[DocumentationStep]
+        J --> K[PRCreationStep]
+        K --> L[AnalyticsStep]
+    end
+    
+    subgraph "Support Systems"
+        M[WorkflowContext] --> B
+        N[WorkflowValidation] --> D
+        O[WorkflowCheckpoint] --> E
+        P[RecoveryStrategy] --> F
+    end
+    
+    C --> G
+    C --> H
+    C --> I
+    C --> J
+    C --> K
+    C --> L
+    
+    B -.-> M
+    D -.-> N
+    E -.-> O
+    F -.-> P
+```
+
+### Workflow Orchestration Patterns
+
+**1. Step-Based Execution**
+- Each workflow step implements the `WorkflowStep` interface
+- Steps are executed sequentially with dependency validation
+- Each step can produce checkpoints for recovery
+- Steps can be skipped, retried, or force-executed based on configuration
+
+**2. Context Propagation**
+- `WorkflowContext` maintains state across all steps
+- Context includes session ID, working directory, branch state, and boundaries
+- Context is persisted at checkpoints for recovery scenarios
+
+**3. Validation & Error Handling**
+- Pre-step validation ensures prerequisites are met
+- Post-step validation confirms successful execution
+- Failed steps trigger error recovery workflows
+- Emergency recovery mode provides manual intervention capabilities
+
+### Integration with Existing Architecture
+
+The workflow orchestration system leverages and extends existing Mastro components:
+
+- **AI Client**: Enhanced for workflow-specific AI operations
+- **Git Analyzer**: Extended with `getCurrentCommit()` for workflow validation
+- **Interactive UI**: Integrated for boundary review and user confirmations
+- **Analytics Engine**: Enhanced with workflow pattern detection
+- **File System**: Extended for checkpoint persistence in `.git/mastro/`
+
+## 💾 Checkpoint System Architecture
+
+### Overview
+The Checkpoint System provides comprehensive state management and recovery capabilities, enabling robust workflow execution with graceful error recovery.
+
+### Architecture Components
+
+```mermaid
+flowchart TB
+    subgraph "Checkpoint Management"
+        A[CheckpointManager] --> B[CheckpointStore]
+        A --> C[CheckpointValidator]
+        A --> D[RecoveryEngine]
+    end
+    
+    subgraph "Checkpoint Storage"
+        B --> E[.git/mastro/checkpoints/]
+        E --> F[step-1-code-analysis.json]
+        E --> G[step-2-boundary-review.json]
+        E --> H[recovery-context.json]
+        E --> I[workflow-state.json]
+    end
+    
+    subgraph "Recovery Operations"
+        D --> J[AutomaticRecovery]
+        D --> K[InteractiveRecovery] 
+        D --> L[ManualRecovery]
+        D --> M[EmergencyRecovery]
+    end
+    
+    subgraph "Validation & Integrity"
+        C --> N[StateValidation]
+        C --> O[ContextIntegrity]
+        C --> P[DependencyCheck]
+    end
+```
+
+### Checkpoint Storage Strategy
+
+**1. Git-Based Persistence**
+- Checkpoints stored in `.git/mastro/checkpoints/` to avoid repository contamination
+- JSON format for human readability and debugging
+- Automatic cleanup of old checkpoints to prevent storage bloat
+
+**2. Hierarchical State Management**
+```typescript
+// Checkpoint data structure
+{
+  "id": "step-3-commits-1691234567890",
+  "timestamp": "2023-08-05T10:42:47.890Z",
+  "step": "commits",
+  "stepNumber": 3,
+  "totalSteps": 6,
+  "context": { /* complete workflow context */ },
+  "data": { /* step-specific state */ },
+  "success": true,
+  "nextSteps": ["documentation", "pr-creation", "analytics"]
+}
+```
+
+**3. Recovery Context Preservation**
+- Complete workflow state captured at each checkpoint
+- Step-specific data preserved for exact recovery
+- User preferences and configuration maintained across recovery
+
+### Recovery Architecture Patterns
+
+**Multi-Level Recovery Strategy**
+1. **Level 1 - Automatic**: Retry with exponential backoff, auto-correct common issues
+2. **Level 2 - Interactive**: Guided troubleshooting with user input
+3. **Level 3 - Manual**: Custom recovery scripts, expert-level intervention
+
+## 🎯 Interactive UI Architecture
+
+### Overview
+The Interactive UI system provides sophisticated user interaction capabilities for boundary review, customization, and workflow control.
+
+### Component Architecture
+
+```mermaid
+flowchart TB
+    subgraph "Interactive UI Layer"
+        A[InteractiveUI] --> B[BoundaryReviewManager]
+        A --> C[UserChoiceEngine]
+        A --> D[ValidationUIManager]
+        A --> E[RetryUIManager]
+    end
+    
+    subgraph "Boundary Management"
+        B --> F[BoundaryValidator]
+        B --> G[BoundaryModifier]
+        B --> H[BoundaryVisualizer]
+    end
+    
+    subgraph "User Interaction"
+        C --> I[ChoicePrompts]
+        C --> J[InputValidation] 
+        C --> K[ConfirmationDialogs]
+        C --> L[ProgressIndicators]
+    end
+    
+    subgraph "Retry & Recovery"
+        E --> M[RetryStrategy]
+        E --> N[FailureAnalysis]
+        E --> O[RecoveryOptions]
+    end
+    
+    subgraph "Validation Feedback"
+        D --> P[ValidationResults]
+        D --> Q[IssueReporting]
+        D --> R[SuggestionEngine]
+    end
+```
+
+### Interactive Boundary Review Features
+
+**1. Comprehensive Boundary Management**
+- File addition/removal from boundaries
+- Boundary splitting and merging capabilities
+- Commit message editing and regeneration
+- Detailed diff viewing and analysis
+
+**2. Validation & Quality Assurance**
+- Real-time boundary quality scoring (0-100 scale)
+- Issue detection (mixed concerns, large boundaries, dependencies)
+- Automated suggestions with confidence scores
+- User-guided resolution of validation failures
+
+**3. Retry & Recovery Mechanisms**
+- Automatic retry for transient failures
+- User-guided retry with customization options
+- Recovery from validation failures with step-by-step guidance
+- Rollback capabilities for failed operations
+
+### UI Design Patterns
+
+**1. Progressive Enhancement**
+- Basic functionality works without interaction
+- Enhanced features available in interactive mode
+- Graceful degradation when interactive features unavailable
+
+**2. Context-Aware Assistance**
+- AI-powered suggestions based on code analysis
+- Historical pattern matching for user preferences
+- Intelligent defaults based on repository patterns
+
+**3. Error-Resistant Design**
+- Input validation at all interaction points
+- Confirmation dialogs for destructive operations
+- Comprehensive error messaging with recovery guidance
+
+## 🛡️ Error Recovery System Architecture
+
+### Overview
+The Error Recovery System provides multi-level error handling with intelligent diagnostics, automated recovery strategies, and comprehensive troubleshooting support.
+
+### Architecture Components
+
+```mermaid
+flowchart TB
+    subgraph "Error Detection & Analysis"
+        A[ErrorDetector] --> B[ErrorCategorizer]
+        B --> C[DiagnosticEngine]
+        C --> D[RootCauseAnalysis]
+    end
+    
+    subgraph "Recovery Strategy Selection"
+        D --> E[RecoveryStrategyEngine]
+        E --> F[AutomaticRecovery]
+        E --> G[InteractiveRecovery]
+        E --> H[ManualRecovery]
+    end
+    
+    subgraph "Recovery Execution"
+        F --> I[RetryEngine]
+        F --> J[StateReset]
+        F --> K[ConfigCorrection]
+        
+        G --> L[GuidedTroubleshooting]
+        G --> M[UserDecisionPoints]
+        
+        H --> N[RecoveryScriptGeneration]
+        H --> O[EmergencyProcedures]
+    end
+    
+    subgraph "Learning & Prevention"
+        I --> P[ErrorLearning]
+        J --> P
+        K --> P
+        L --> P
+        P --> Q[PreventiveMeasures]
+        P --> R[PatternRecognition]
+    end
+```
+
+### Error Recovery Patterns
+
+**1. Intelligent Error Classification**
+- Automatic categorization: `git`, `ai-service`, `filesystem`, `network`, `user`, `config`
+- Severity assessment: `low`, `medium`, `high`, `critical`
+- Recovery confidence scoring based on error type and context
+
+**2. Context-Aware Recovery**
+- User experience level consideration (`beginner`, `intermediate`, `advanced`, `expert`)
+- Historical success patterns for similar errors
+- Repository-specific patterns and preferences
+- Current workflow state and step dependencies
+
+**3. Progressive Recovery Escalation**
+```typescript
+// Recovery escalation pattern
+Level 1: Automatic → Retry with backoff, auto-correct config
+  ↓ (if failed)
+Level 2: Interactive → Guided troubleshooting, user input
+  ↓ (if failed)  
+Level 3: Manual → Custom scripts, emergency procedures
+```
+
+### Diagnostic Engine Features
+
+**1. Comprehensive Context Collection**
+- System environment (OS, Node.js, Git versions)
+- Repository state (branch, staging area, working directory)
+- Process information (running Git processes, resource usage)
+- User session data (recent commands, productivity patterns)
+
+**2. Root Cause Analysis**
+- Multi-factor analysis considering system, user, and environmental factors
+- Pattern matching against known error signatures
+- Confidence scoring for identified causes
+- Technical and user-friendly explanations
+
+**3. Learning System**
+- Error resolution tracking and success rate monitoring
+- Pattern recognition for recurring issues
+- Preventive measure suggestions based on historical data
+- Continuous improvement of recovery strategies
+
+## 🎯 Focus Session Architecture
+
+### Overview
+The Focus Session system provides advanced productivity tracking, pattern detection, and intelligent development insights through continuous session monitoring.
+
+### Architecture Components
+
+```mermaid
+flowchart TB
+    subgraph "Session Management"
+        A[FocusSessionMonitor] --> B[SessionTracker]
+        A --> C[ProductivityAnalyzer]
+        A --> D[PatternDetector]
+    end
+    
+    subgraph "Data Collection"
+        B --> E[GitStateMonitor]
+        B --> F[FileChangeTracker]
+        B --> G[InterruptionDetector]
+        B --> H[GoalTracker]
+    end
+    
+    subgraph "Analysis Engine"
+        C --> I[VelocityCalculator]
+        C --> J[FocusMetrics]
+        C --> K[QualityAssessment]
+        
+        D --> L[TDDDetector]
+        D --> M[RefactorPatternDetector]
+        D --> N[ExplorationDetector]
+    end
+    
+    subgraph "Insights & Recommendations"
+        I --> O[ProductivityInsights]
+        J --> O
+        K --> O
+        L --> P[WorkflowRecommendations]
+        M --> P
+        N --> P
+    end
+```
+
+### Focus Session Features
+
+**1. Real-Time Session Monitoring**
+- Continuous Git state tracking (branch, commits, staging area)
+- File system change detection with impact assessment
+- Interruption detection and categorization
+- Goal progress tracking with milestone recognition
+
+**2. Productivity Metrics Calculation**
+- Lines per minute, files per hour, commits per hour
+- Deep work session identification (25+ minute focused periods)
+- Context switch frequency and impact analysis
+- Focus ratio calculation (deep work vs total time)
+
+**3. Pattern Recognition System**
+```typescript
+// Example pattern detection
+TDD Pattern: {
+  confidence: 0.95,
+  evidence: [
+    "4 test files modified before corresponding source files",
+    "Red-green-refactor cycle detected",
+    "Test coverage increased by 15%"
+  ],
+  recommendation: "Excellent TDD practice! Continue this approach."
+}
+```
+
+**4. Intelligent Recommendations**
+- Peak productivity hour identification
+- Optimal session length recommendations
+- Break suggestions based on focus patterns
+- Workflow optimization guidance
+
+### Integration with Existing Systems
+
+The Focus Session architecture seamlessly integrates with existing Mastro components:
+
+- **Analytics Engine**: Enhanced with focus session data
+- **Git Analyzer**: Extended for real-time state monitoring
+- **Workflow Orchestration**: Focus sessions inform workflow timing
+- **Error Recovery**: Session context aids in recovery strategies
+
 <!-- CUSTOM_END -->
 
 *Documentation generated by [Mastro CLI](https://github.com/your-org/mastro) on 8/8/2025*

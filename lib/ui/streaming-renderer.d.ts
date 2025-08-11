@@ -18,9 +18,11 @@ export declare class StreamingRenderer extends UIRenderer {
     private renderBlocker;
     private renderReviewSuggestion;
     private renderOverallRating;
+    protected normalizeRating(rating: any): string;
     private isCommitMessage;
     private isDiffExplanation;
     private isSessionReview;
+    private clearCurrentLine;
     cleanup(): void;
 }
 //# sourceMappingURL=streaming-renderer.d.ts.map

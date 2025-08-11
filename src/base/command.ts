@@ -44,7 +44,7 @@ export abstract class BaseCommand extends Command {
     await super.init();
     
     // Load .env file if it exists
-    loadDotenv({path: resolve(process.cwd(), '.env')});
+    loadDotenv({path: resolve(process.cwd(), '.env'), quiet: true});
     
     const {flags} = await this.parse();
     
@@ -78,7 +78,7 @@ export abstract class BaseCommand extends Command {
   }
 
   protected updateSpinner(text: string): void {
-    if (this.spinner) {
+    if (this.spinner && this.spinner.text !== text) {
       this.spinner.text = text;
     } else if (!this.mastroConfig.ui.spinner) {
       // Fallback to simple text output when spinner is disabled
@@ -98,6 +98,23 @@ export abstract class BaseCommand extends Command {
       // Fallback to simple text output when spinner is disabled
       const icon = success ? '✓' : '✗';
       console.log(`${icon} ${text}`);
+    }
+  }
+
+  protected async withSpinner<T>(
+    text: string,
+    operation: () => Promise<T>,
+    successText?: string,
+    errorText?: string
+  ): Promise<T> {
+    this.startSpinner(text);
+    try {
+      const result = await operation();
+      this.stopSpinner(true, successText);
+      return result;
+    } catch (error) {
+      this.stopSpinner(false, errorText || 'Operation failed');
+      throw error;
     }
   }
 

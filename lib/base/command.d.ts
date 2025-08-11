@@ -23,6 +23,7 @@ export declare abstract class BaseCommand extends Command {
     protected startSpinner(text: string): void;
     protected updateSpinner(text: string): void;
     protected stopSpinner(success?: boolean, text?: string): void;
+    protected withSpinner<T>(text: string, operation: () => Promise<T>, successText?: string, errorText?: string): Promise<T>;
     log(message: string, level?: LogLevel): void;
     protected success(message: string): void;
     protected ensureGitRepository(): Promise<void>;

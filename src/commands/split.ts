@@ -5,8 +5,9 @@ import {InteractiveUI} from '../ui/interactive.js';
 import {CommitBoundaryAnalyzer} from '../core/commit-boundary-analyzer.js';
 import {SemanticAnalyzer} from '../analyzers/semantic-analyzer.js';
 import {ImpactAnalyzer} from '../analyzers/impact-analyzer.js';
+import {WorkflowContextManager} from '../core/workflow-context-manager.js';
 import type {CommitBoundary, StagingStrategy} from '../core/commit-boundary-analyzer.js';
-import type {GitChange} from '../types/index.js';
+import type {GitChange, WorkflowContext} from '../types/index.js';
 
 export default class Split extends BaseCommand {
   static override description = 'Analyze working changes and suggest optimal commit boundaries';
@@ -39,6 +40,10 @@ export default class Split extends BaseCommand {
       description: 'interactive mode for customizing boundaries',
       default: false
     }),
+    'interactive-review': Flags.boolean({
+      description: 'enhanced interactive review with retry mechanisms and validation',
+      default: false
+    }),
     'min-boundary-size': Flags.integer({
       description: 'minimum number of files per boundary (default: 1)',
       default: 1
@@ -46,12 +51,21 @@ export default class Split extends BaseCommand {
     'max-boundary-size': Flags.integer({
       description: 'maximum number of files per boundary (default: 8)',
       default: 8
+    }),
+    'flow': Flags.boolean({
+      description: 'prepare boundaries for workflow chain (stage but do not commit)',
+      default: false
+    }),
+    'commit': Flags.boolean({
+      description: 'automatically commit boundaries (skip review workflow)',
+      default: false
     })
   };
 
   private renderer!: UIRenderer;
   private interactiveUI!: InteractiveUI;
   private boundaryAnalyzer!: CommitBoundaryAnalyzer;
+  private workflowManager!: WorkflowContextManager;
 
   public async run(): Promise<void> {
     const {flags} = await this.parse(Split);
@@ -60,6 +74,7 @@ export default class Split extends BaseCommand {
       // Initialize components
       this.renderer = new UIRenderer(this.mastroConfig);
       this.interactiveUI = new InteractiveUI(this.mastroConfig);
+      this.workflowManager = new WorkflowContextManager();
       
       const semanticAnalyzer = new SemanticAnalyzer();
       const impactAnalyzer = new ImpactAnalyzer();
@@ -71,6 +86,9 @@ export default class Split extends BaseCommand {
 
       // Ensure we're in a git repository
       await this.ensureGitRepository();
+
+      // Validate flags
+      await this.validateFlags(flags);
 
       // Analyze working directory changes
       this.startSpinner('Analyzing working directory changes...');
@@ -101,14 +119,28 @@ export default class Split extends BaseCommand {
         this.outputTerminal(strategy, workingChanges);
       }
 
-      // Interactive mode for customizing boundaries
-      if (flags.interactive && !flags['dry-run']) {
-        await this.handleInteractiveMode(strategy, workingChanges);
-      }
+      // Handle workflow modes
+      if (flags.flow && !flags['dry-run']) {
+        await this.handleFlowMode(strategy);
+      } else if (flags.commit && !flags['dry-run']) {
+        await this.handleCommitMode(strategy);
+      } else {
+        // Traditional modes
+        
+        // Interactive mode for customizing boundaries
+        if (flags.interactive && !flags['dry-run']) {
+          await this.handleInteractiveMode(strategy, workingChanges);
+        }
 
-      // Auto-stage if requested
-      if (flags['auto-stage'] && !flags['dry-run']) {
-        await this.handleAutoStaging(strategy);
+        // Enhanced interactive review mode
+        if (flags['interactive-review'] && !flags['dry-run']) {
+          await this.handleInteractiveReviewMode(strategy, workingChanges);
+        }
+
+        // Auto-stage if requested
+        if (flags['auto-stage'] && !flags['dry-run']) {
+          await this.handleAutoStaging(strategy);
+        }
       }
 
       // Dry run - just show analysis
@@ -656,6 +688,139 @@ export default class Split extends BaseCommand {
     }
   }
 
+  // Workflow mode handlers
+
+  private async validateFlags(flags: any): Promise<void> {
+    if (flags.flow && flags.commit) {
+      throw new Error('Cannot use both --flow and --commit flags. Choose one workflow mode.');
+    }
+
+    if ((flags.flow || flags.commit) && flags['auto-stage']) {
+      this.log('Note: --auto-stage is redundant with workflow modes', 'warn');
+    }
+
+    if ((flags.flow || flags.commit) && flags.interactive) {
+      this.log('Note: --interactive will be skipped in workflow modes', 'warn');
+    }
+  }
+
+  private async handleFlowMode(strategy: StagingStrategy): Promise<void> {
+    this.log('\n' + this.renderer.renderTitle('🔄 Preparing for Workflow Chain'));
+    
+    // Create workflow context
+    const workflowSettings = {
+      skipReview: false,
+      skipDocs: false,
+      autoMode: false
+    };
+    
+    const context = await this.workflowManager.createContext(strategy.commits, workflowSettings);
+    this.success(`Created workflow context: ${context.sessionId}`);
+    
+    // Stage files for first boundary
+    if (strategy.commits.length > 0) {
+      const firstCommit = strategy.commits[0];
+      await this.stageFilesForBoundary(firstCommit, 0, strategy.commits.length);
+      
+      this.log('\n📋 Next Steps:');
+      this.log('  1. Review staged changes: mastro review --boundary-context');
+      this.log('  2. Make any necessary fixes');
+      this.log('  3. Continue workflow: mastro flow --continue');
+      this.log('  OR');
+      this.log('  Full automated workflow: mastro flow');
+    }
+  }
+
+  private async handleCommitMode(strategy: StagingStrategy): Promise<void> {
+    this.log('\n' + this.renderer.renderTitle('⚡ Auto-Commit Mode'));
+    
+    const totalBoundaries = strategy.commits.length;
+    
+    for (let i = 0; i < totalBoundaries; i++) {
+      const commit = strategy.commits[i];
+      
+      this.log(`\n📦 Processing boundary ${i + 1}/${totalBoundaries}:`);
+      this.log(`   ${commit.suggestedMessage.title} (${commit.boundary.files.length} files)`);
+      
+      // Stage files for this boundary
+      await this.stageFilesForBoundary(commit, i, totalBoundaries);
+      
+      // Create commit
+      await this.createCommitForBoundary(commit);
+      
+      this.success(`✅ Boundary ${i + 1} committed successfully`);
+    }
+    
+    this.log('\n🎉 All boundaries have been committed!');
+    this.displayFinalCommitSummary(strategy.commits);
+  }
+
+  private async stageFilesForBoundary(commit: any, index: number, total: number): Promise<void> {
+    const filesToStage = commit.boundary.files.map((f: any) => f.file);
+    
+    this.startSpinner(`Staging ${filesToStage.length} files for boundary ${index + 1}/${total}...`);
+    
+    try {
+      // Clear staging area first
+      await (this.gitAnalyzer as any).git.reset(['HEAD']);
+      
+      // Stage files for this boundary
+      await (this.gitAnalyzer as any).git.add(filesToStage);
+      
+      this.stopSpinner(true, `Files staged for: ${commit.suggestedMessage.title}`);
+      
+      // Show staged files
+      this.log(`   Staged files:`);
+      filesToStage.forEach((file: string) => {
+        console.log(`     ✓ ${file}`);
+      });
+      
+    } catch (error) {
+      this.stopSpinner(false, 'Failed to stage files');
+      throw new Error(`Failed to stage files for boundary: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private async createCommitForBoundary(commit: any): Promise<void> {
+    this.startSpinner('Creating commit...');
+    
+    try {
+      const commitMessage = this.formatCommitMessage(commit.suggestedMessage);
+      await (this.gitAnalyzer as any).git.commit(commitMessage);
+      
+      this.stopSpinner(true, 'Commit created successfully');
+      
+    } catch (error) {
+      this.stopSpinner(false, 'Failed to create commit');
+      throw new Error(`Failed to create commit: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private formatCommitMessage(message: any): string {
+    let commitText = message.title;
+    
+    if (message.body && message.body.trim()) {
+      commitText += '\n\n' + message.body;
+    }
+    
+    return commitText;
+  }
+
+  private displayFinalCommitSummary(commits: any[]): void {
+    this.log('\n📊 Commit Summary:');
+    this.log('─'.repeat(50));
+    
+    commits.forEach((commit, index) => {
+      console.log(`${index + 1}. ${commit.suggestedMessage.title}`);
+      console.log(`   Files: ${commit.boundary.files.length} | Risk: ${commit.risk} | Time: ${commit.estimatedTime}`);
+    });
+    
+    this.log('\n💡 Next steps:');
+    this.log('  • Push commits: git push');
+    this.log('  • Create PR: mastro pr create');
+    this.log('  • View analytics: mastro analytics');
+  }
+
   // Helper method to generate simple commit messages without using the private boundary analyzer method
   private generateSimpleCommitMessage(boundary: CommitBoundary): {title: string; type: string; body?: string} {
     // Determine commit type based on file changes and theme
@@ -696,5 +861,644 @@ export default class Split extends BaseCommand {
     if (file.insertions === 0 && file.deletions > 0) return 'deleted';
     if (file.insertions > 0 && file.deletions > 0) return 'modified';
     return 'unknown';
+  }
+
+  // Enhanced Interactive Review Mode with Retry Mechanisms
+
+  private async handleInteractiveReviewMode(strategy: StagingStrategy, allChanges: GitChange[]): Promise<void> {
+    console.log('\n' + this.renderer.renderTitle('🔍 Enhanced Interactive Boundary Review'));
+    
+    this.displayBoundaryOverview(strategy);
+
+    let currentBoundaryIndex = 0;
+    const processedBoundaries: string[] = [];
+    const failedBoundaries: {boundary: any; error: string; attempts: number}[] = [];
+
+    while (currentBoundaryIndex < strategy.commits.length) {
+      const currentBoundary = strategy.commits[currentBoundaryIndex];
+      
+      console.log(`\n📦 Reviewing Boundary ${currentBoundaryIndex + 1}/${strategy.commits.length}`);
+      console.log(`Theme: ${currentBoundary.suggestedMessage.title}`);
+      console.log(`Files: ${currentBoundary.boundary.files.length} | Priority: ${currentBoundary.boundary.priority}`);
+
+      const reviewResult = await this.reviewBoundaryInteractively(currentBoundary, currentBoundaryIndex + 1, strategy.commits.length);
+
+      switch (reviewResult.action) {
+        case 'accept':
+          if (reviewResult.stageFiles) {
+            const stageResult = await this.attemptBoundaryStaging(currentBoundary, currentBoundaryIndex + 1);
+            if (stageResult.success) {
+              processedBoundaries.push(currentBoundary.boundary.id);
+              this.success(`✅ Boundary ${currentBoundaryIndex + 1} accepted and staged`);
+              currentBoundaryIndex++;
+            } else {
+              await this.handleStagingFailure(currentBoundary, stageResult.error, failedBoundaries);
+            }
+          } else {
+            processedBoundaries.push(currentBoundary.boundary.id);
+            this.success(`✅ Boundary ${currentBoundaryIndex + 1} accepted`);
+            currentBoundaryIndex++;
+          }
+          break;
+
+        case 'modify':
+          // Allow user to modify the boundary
+          await this.modifyBoundaryInteractively(currentBoundary, strategy);
+          // Review the same boundary again after modification
+          break;
+
+        case 'skip':
+          this.log(`⏭️ Skipped boundary ${currentBoundaryIndex + 1}`, 'info');
+          currentBoundaryIndex++;
+          break;
+
+        case 'retry':
+          this.log(`🔄 Retrying boundary ${currentBoundaryIndex + 1}`, 'info');
+          // Review the same boundary again
+          break;
+
+        case 'abort':
+          this.log('🛑 Interactive review aborted by user', 'warn');
+          return;
+      }
+    }
+
+    // Display final summary
+    this.displayInteractiveReviewSummary(processedBoundaries, failedBoundaries, strategy);
+
+    // Handle any failed boundaries
+    if (failedBoundaries.length > 0) {
+      await this.handleFailedBoundariesRecovery(failedBoundaries);
+    }
+  }
+
+  private displayBoundaryOverview(strategy: StagingStrategy): void {
+    console.log(this.renderer.renderSection('📋 Boundary Overview', [
+      `Total boundaries: ${strategy.commits.length}`,
+      `Strategy: ${strategy.strategy}`,
+      `Overall risk: ${strategy.overallRisk}`
+    ]));
+
+    if (strategy.warnings.length > 0) {
+      console.log(this.renderer.renderSection('⚠️ Warnings', strategy.warnings));
+    }
+  }
+
+  private async reviewBoundaryInteractively(boundary: any, index: number, total: number): Promise<{
+    action: 'accept' | 'modify' | 'skip' | 'retry' | 'abort';
+    stageFiles?: boolean;
+  }> {
+    console.log(`\n🔍 Boundary ${index}/${total} Details:`);
+    console.log(`   Theme: ${boundary.boundary.theme}`);
+    console.log(`   Priority: ${boundary.boundary.priority}`);
+    console.log(`   Risk: ${boundary.risk}`);
+    console.log(`   Estimated time: ${boundary.estimatedTime}`);
+    
+    if (boundary.boundary.dependencies.length > 0) {
+      console.log(`   Dependencies: ${boundary.boundary.dependencies.join(', ')}`);
+    }
+
+    console.log(`\n📁 Files in this boundary:`);
+    boundary.boundary.files.forEach((file: any, fileIndex: number) => {
+      const changeIcon = this.getChangeTypeIcon(file);
+      console.log(`   ${fileIndex + 1}. ${changeIcon} ${file.file} (+${file.insertions} -${file.deletions})`);
+    });
+
+    console.log(`\n💭 Rationale: ${boundary.rationale}`);
+
+    const actions = [
+      'Accept boundary (ready to stage)',
+      'Accept boundary (don\'t stage yet)',
+      'Modify boundary (split, merge, or edit)',
+      'Skip this boundary',
+      'Retry boundary review',
+      'Run quick validation',
+      'Show detailed diff',
+      'Abort review session'
+    ];
+
+    const choice = await this.interactiveUI.selectIndex(
+      'Choose an action for this boundary:',
+      actions
+    );
+
+    switch (choice) {
+      case 0:
+        return { action: 'accept', stageFiles: true };
+      case 1:
+        return { action: 'accept', stageFiles: false };
+      case 2:
+        return { action: 'modify' };
+      case 3:
+        return { action: 'skip' };
+      case 4:
+        return { action: 'retry' };
+      case 5:
+        await this.runBoundaryValidation(boundary);
+        return { action: 'retry' };
+      case 6:
+        await this.showDetailedBoundaryDiff(boundary);
+        return { action: 'retry' };
+      case 7:
+        return { action: 'abort' };
+      default:
+        return { action: 'retry' };
+    }
+  }
+
+  private async attemptBoundaryStaging(boundary: any, index: number): Promise<{success: boolean; error?: string}> {
+    this.startSpinner(`Staging files for boundary ${index}...`);
+
+    try {
+      // Clear staging area first
+      await (this.gitAnalyzer as any).git.reset(['HEAD']);
+      
+      // Stage files for this boundary
+      const filesToStage = boundary.boundary.files.map((f: any) => f.file);
+      await (this.gitAnalyzer as any).git.add(filesToStage);
+      
+      // Validate that files were staged correctly
+      const stagedChanges = await this.gitAnalyzer.getStagedChanges();
+      const stagedFiles = new Set(stagedChanges.map(change => change.file));
+      const expectedFiles = new Set(filesToStage);
+      
+      const missingFiles = filesToStage.filter((file: string) => !stagedFiles.has(file));
+      
+      if (missingFiles.length > 0) {
+        throw new Error(`Some files could not be staged: ${missingFiles.join(', ')}`);
+      }
+
+      this.stopSpinner(true, `Successfully staged ${filesToStage.length} files`);
+      return { success: true };
+
+    } catch (error) {
+      this.stopSpinner(false, 'Staging failed');
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown staging error' 
+      };
+    }
+  }
+
+  private async handleStagingFailure(boundary: any, error: string, failedBoundaries: {boundary: any; error: string; attempts: number}[]): Promise<void> {
+    const existingFailure = failedBoundaries.find(f => f.boundary.boundary.id === boundary.boundary.id);
+    
+    if (existingFailure) {
+      existingFailure.attempts++;
+    } else {
+      failedBoundaries.push({ boundary, error, attempts: 1 });
+    }
+
+    console.log(`\n❌ Staging failed for boundary: ${boundary.boundary.theme}`);
+    console.log(`   Error: ${error}`);
+    
+    const maxRetries = 3;
+    const currentAttempt = existingFailure?.attempts || 1;
+    
+    if (currentAttempt < maxRetries) {
+      const retryOptions = [
+        'Retry staging immediately',
+        'Modify boundary and retry',
+        'Skip this boundary for now',
+        'Show error details and troubleshoot'
+      ];
+
+      const choice = await this.interactiveUI.selectIndex(
+        `Attempt ${currentAttempt}/${maxRetries} failed. What would you like to do?`,
+        retryOptions
+      );
+
+      switch (choice) {
+        case 0:
+          // Retry will happen in the main loop
+          break;
+        case 1:
+          await this.modifyBoundaryInteractively(boundary, { commits: [boundary] } as StagingStrategy);
+          break;
+        case 2:
+          // Skip will be handled by caller
+          break;
+        case 3:
+          console.log('\n🔍 Error Details:');
+          console.log(`   ${error}`);
+          console.log('\n💡 Common solutions:');
+          console.log('   • Ensure all files exist and are accessible');
+          console.log('   • Check for file permission issues');
+          console.log('   • Verify files haven\'t been moved or deleted');
+          await this.interactiveUI.confirmAction('Press Enter to continue...', true);
+          break;
+      }
+    } else {
+      console.log(`   Maximum retry attempts (${maxRetries}) exceeded.`);
+      console.log('   This boundary will be marked as failed.');
+    }
+  }
+
+  private async modifyBoundaryInteractively(boundary: any, strategy: StagingStrategy): Promise<void> {
+    const modifyOptions = [
+      'Split boundary into smaller parts',
+      'Remove problematic files',
+      'Edit commit message',
+      'View and edit file list',
+      'Reset boundary to original state'
+    ];
+
+    const choice = await this.interactiveUI.selectIndex(
+      'How would you like to modify this boundary?',
+      modifyOptions
+    );
+
+    switch (choice) {
+      case 0:
+        await this.splitBoundaryFiles(boundary);
+        break;
+      case 1:
+        await this.removeProblematicFiles(boundary);
+        break;
+      case 2:
+        await this.editBoundaryCommitMessage(boundary);
+        break;
+      case 3:
+        await this.editBoundaryFiles(boundary);
+        break;
+      case 4:
+        // Reset would need to be implemented based on original boundary analysis
+        this.log('Reset functionality not yet implemented', 'warn');
+        break;
+    }
+  }
+
+  private async splitBoundaryFiles(boundary: any): Promise<void> {
+    const files = boundary.boundary.files;
+    
+    if (files.length < 2) {
+      this.log('Cannot split boundary with less than 2 files', 'warn');
+      return;
+    }
+
+    console.log('\n📁 Current boundary files:');
+    files.forEach((file: any, index: number) => {
+      console.log(`   ${index + 1}. ${file.file} (+${file.insertions} -${file.deletions})`);
+    });
+
+    const splitPoint = await this.interactiveUI.selectIndex(
+      'Select the last file for the first part (remaining files will go to second part):',
+      files.map((file: any, index: number) => `${index + 1}. ${file.file}`)
+    );
+
+    // Split the files
+    const firstPart = files.slice(0, splitPoint + 1);
+    const secondPart = files.slice(splitPoint + 1);
+
+    boundary.boundary.files = firstPart;
+    
+    // Update boundary metadata
+    boundary.boundary.id = `${boundary.boundary.id}-part1`;
+    boundary.boundary.theme = `${boundary.boundary.theme} (part 1)`;
+    boundary.suggestedMessage.title = `${boundary.suggestedMessage.title} (part 1)`;
+
+    this.success(`Boundary split: Part 1 has ${firstPart.length} files, Part 2 has ${secondPart.length} files`);
+    this.log('Note: Only the first part is active. The second part would need separate processing.', 'info');
+  }
+
+  private async removeProblematicFiles(boundary: any): Promise<void> {
+    const files = boundary.boundary.files;
+    
+    console.log('\n📁 Select files to REMOVE from this boundary:');
+    files.forEach((file: any, index: number) => {
+      console.log(`   ${index + 1}. ${file.file} (+${file.insertions} -${file.deletions})`);
+    });
+    
+    const fileChoice = await this.interactiveUI.selectIndex(
+      'Which file should be removed? (select one at a time)',
+      files.map((file: any) => `${file.file} (+${file.insertions} -${file.deletions})`)
+    );
+
+    if (files.length <= 1) {
+      this.log('Cannot remove the last file from boundary', 'warn');
+      return;
+    }
+
+    const removedFile = files[fileChoice];
+    boundary.boundary.files = files.filter((_: any, index: number) => index !== fileChoice);
+    
+    this.success(`Removed ${removedFile.file}. Boundary now has ${boundary.boundary.files.length} files.`);
+    
+    // Ask if user wants to remove more files
+    const removeMore = await this.interactiveUI.confirmAction(
+      'Remove another file from this boundary?',
+      false
+    );
+    
+    if (removeMore && boundary.boundary.files.length > 1) {
+      await this.removeProblematicFiles(boundary);
+    }
+  }
+
+  private async editBoundaryCommitMessage(boundary: any): Promise<void> {
+    console.log(`\nCurrent commit message: ${boundary.suggestedMessage.title}`);
+    
+    const newTitle = await this.interactiveUI.getTextInput(
+      'Enter new commit title',
+      boundary.suggestedMessage.title
+    );
+
+    if (newTitle && newTitle !== boundary.suggestedMessage.title) {
+      boundary.suggestedMessage.title = newTitle;
+      this.success(`Updated commit title to: "${newTitle}"`);
+    }
+  }
+
+  private async editBoundaryFiles(boundary: any): Promise<void> {
+    const files = boundary.boundary.files;
+    
+    console.log('\n📁 Current boundary files:');
+    files.forEach((file: any, index: number) => {
+      console.log(`   ${index + 1}. ${file.file} (+${file.insertions} -${file.deletions})`);
+    });
+
+    const editOptions = [
+      'Reorder files',
+      'Remove specific files',
+      'View detailed diff for a file',
+      'Cancel editing'
+    ];
+
+    const choice = await this.interactiveUI.selectIndex(
+      'What would you like to do with the file list?',
+      editOptions
+    );
+
+    switch (choice) {
+      case 0:
+        await this.reorderBoundaryFiles(boundary);
+        break;
+      case 1:
+        await this.removeProblematicFiles(boundary);
+        break;
+      case 2:
+        await this.viewFileDetailedDiff(boundary);
+        break;
+      case 3:
+        break;
+    }
+  }
+
+  private async reorderBoundaryFiles(boundary: any): Promise<void> {
+    // Simple reordering implementation
+    this.log('File reordering functionality would allow drag-and-drop style reordering', 'info');
+    this.log('For now, files are ordered by their analysis priority', 'info');
+  }
+
+  private async viewFileDetailedDiff(boundary: any): Promise<void> {
+    const files = boundary.boundary.files;
+    
+    const fileChoice = await this.interactiveUI.selectIndex(
+      'Select file to view detailed diff:',
+      files.map((file: any) => file.file)
+    );
+
+    const selectedFile = files[fileChoice];
+    
+    try {
+      const diff = await (this.gitAnalyzer as any).git.diff([selectedFile.file]);
+      console.log(`\n📄 Detailed diff for ${selectedFile.file}:`);
+      console.log('─'.repeat(50));
+      console.log(diff);
+      console.log('─'.repeat(50));
+    } catch (error) {
+      this.log(`Could not show diff for ${selectedFile.file}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    }
+
+    await this.interactiveUI.confirmAction('Press Enter to continue...', true);
+  }
+
+  private async runBoundaryValidation(boundary: any): Promise<void> {
+    this.startSpinner('Running boundary validation checks...');
+
+    const validationResults = {
+      fileExists: 0,
+      fileSyntax: 0,
+      gitTracking: 0,
+      conflicts: 0
+    };
+
+    try {
+      // Check if all files exist and are accessible
+      for (const file of boundary.boundary.files) {
+        try {
+          const fs = await import('fs').then(fs => fs.promises);
+          await fs.access(file.file);
+          validationResults.fileExists++;
+        } catch {
+          // File doesn't exist or not accessible
+        }
+      }
+
+      // Check git tracking status
+      const workingChanges = await this.gitAnalyzer.getWorkingChanges();
+      const workingFiles = new Set(workingChanges.map(change => change.file));
+      
+      for (const file of boundary.boundary.files) {
+        if (workingFiles.has(file.file)) {
+          validationResults.gitTracking++;
+        }
+      }
+
+      this.stopSpinner(true, 'Validation complete');
+
+      console.log('\n📊 Validation Results:');
+      console.log(`   Files exist: ${validationResults.fileExists}/${boundary.boundary.files.length}`);
+      console.log(`   Git tracking: ${validationResults.gitTracking}/${boundary.boundary.files.length}`);
+      
+      if (validationResults.fileExists === boundary.boundary.files.length &&
+          validationResults.gitTracking === boundary.boundary.files.length) {
+        this.success('✅ All validation checks passed!');
+      } else {
+        this.log('⚠️ Some validation issues found. Review the boundary before proceeding.', 'warn');
+      }
+
+    } catch (error) {
+      this.stopSpinner(false, 'Validation failed');
+      this.log(`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    }
+
+    await this.interactiveUI.confirmAction('Press Enter to continue...', true);
+  }
+
+  private async showDetailedBoundaryDiff(boundary: any): Promise<void> {
+    console.log(`\n📄 Detailed diff for boundary: ${boundary.boundary.theme}`);
+    console.log('═'.repeat(60));
+
+    for (const file of boundary.boundary.files) {
+      try {
+        console.log(`\n📁 ${file.file} (+${file.insertions} -${file.deletions})`);
+        console.log('─'.repeat(40));
+        
+        const diff = await (this.gitAnalyzer as any).git.diff([file.file]);
+        if (diff) {
+          // Show first 20 lines of diff to avoid overwhelming output
+          const diffLines = diff.split('\n').slice(0, 20);
+          console.log(diffLines.join('\n'));
+          if (diff.split('\n').length > 20) {
+            console.log('... (diff truncated)');
+          }
+        } else {
+          console.log('No diff available');
+        }
+      } catch (error) {
+        console.log(`Error showing diff: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    console.log('═'.repeat(60));
+    await this.interactiveUI.confirmAction('Press Enter to continue...', true);
+  }
+
+  private displayInteractiveReviewSummary(
+    processedBoundaries: string[], 
+    failedBoundaries: {boundary: any; error: string; attempts: number}[], 
+    strategy: StagingStrategy
+  ): void {
+    console.log('\n' + this.renderer.renderTitle('📊 Interactive Review Summary'));
+
+    console.log(this.renderer.renderSection('Results', [
+      `Total boundaries: ${strategy.commits.length}`,
+      `Successfully processed: ${processedBoundaries.length}`,
+      `Failed boundaries: ${failedBoundaries.length}`,
+      `Success rate: ${Math.round((processedBoundaries.length / strategy.commits.length) * 100)}%`
+    ]));
+
+    if (failedBoundaries.length > 0) {
+      console.log('\n❌ Failed Boundaries:');
+      failedBoundaries.forEach((failed, index) => {
+        console.log(`   ${index + 1}. ${failed.boundary.boundary.theme}`);
+        console.log(`      Error: ${failed.error}`);
+        console.log(`      Attempts: ${failed.attempts}`);
+      });
+    }
+  }
+
+  private async handleFailedBoundariesRecovery(failedBoundaries: {boundary: any; error: string; attempts: number}[]): Promise<void> {
+    console.log('\n🔧 Failed Boundaries Recovery');
+    
+    const recoveryOptions = [
+      'Ignore failed boundaries and continue',
+      'Save failed boundaries for later review',
+      'Attempt manual recovery process',
+      'Show recovery recommendations'
+    ];
+
+    const choice = await this.interactiveUI.selectIndex(
+      'How would you like to handle the failed boundaries?',
+      recoveryOptions
+    );
+
+    switch (choice) {
+      case 0:
+        this.log('Continuing without failed boundaries', 'info');
+        break;
+      case 1:
+        await this.saveFailedBoundariesForReview(failedBoundaries);
+        break;
+      case 2:
+        await this.attemptManualRecovery(failedBoundaries);
+        break;
+      case 3:
+        this.showRecoveryRecommendations(failedBoundaries);
+        break;
+    }
+  }
+
+  private async saveFailedBoundariesForReview(failedBoundaries: {boundary: any; error: string; attempts: number}[]): Promise<void> {
+    try {
+      const fs = await import('fs').then(fs => fs.promises);
+      const failureReport = {
+        timestamp: new Date().toISOString(),
+        session: 'interactive-boundary-review',
+        failures: failedBoundaries.map(failed => ({
+          boundaryId: failed.boundary.boundary.id,
+          theme: failed.boundary.boundary.theme,
+          files: failed.boundary.boundary.files.map((f: any) => f.file),
+          error: failed.error,
+          attempts: failed.attempts,
+          suggestedMessage: failed.boundary.suggestedMessage
+        }))
+      };
+
+      await fs.writeFile(
+        'mastro-failed-boundaries.json',
+        JSON.stringify(failureReport, null, 2)
+      );
+
+      this.success('Failed boundaries saved to mastro-failed-boundaries.json');
+    } catch (error) {
+      this.log(`Could not save failed boundaries: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    }
+  }
+
+  private async attemptManualRecovery(failedBoundaries: {boundary: any; error: string; attempts: number}[]): Promise<void> {
+    for (const failed of failedBoundaries) {
+      console.log(`\n🔧 Manual recovery for: ${failed.boundary.boundary.theme}`);
+      console.log(`   Error: ${failed.error}`);
+      
+      const recoveryActions = [
+        'Skip this boundary',
+        'Retry with modifications',
+        'Break into smaller boundaries',
+        'Manual file staging'
+      ];
+
+      const action = await this.interactiveUI.selectIndex(
+        'Choose recovery action:',
+        recoveryActions
+      );
+
+      switch (action) {
+        case 0:
+          this.log('Skipped failed boundary', 'info');
+          break;
+        case 1:
+          await this.modifyBoundaryInteractively(failed.boundary, { commits: [failed.boundary] } as StagingStrategy);
+          const retryResult = await this.attemptBoundaryStaging(failed.boundary, 1);
+          if (retryResult.success) {
+            this.success('Recovery successful!');
+          } else {
+            this.log('Recovery failed again', 'warn');
+          }
+          break;
+        case 2:
+          await this.splitBoundaryFiles(failed.boundary);
+          break;
+        case 3:
+          this.log('Manual staging: Use `git add <files>` to stage files manually', 'info');
+          break;
+      }
+    }
+  }
+
+  private showRecoveryRecommendations(failedBoundaries: {boundary: any; error: string; attempts: number}[]): void {
+    console.log('\n💡 Recovery Recommendations:');
+    console.log('─'.repeat(40));
+
+    failedBoundaries.forEach((failed, index) => {
+      console.log(`\n${index + 1}. ${failed.boundary.boundary.theme}`);
+      console.log(`   Error: ${failed.error}`);
+      
+      // Provide specific recommendations based on error type
+      if (failed.error.includes('not found') || failed.error.includes('does not exist')) {
+        console.log('   💡 Recommendation: Check if files were moved or deleted');
+        console.log('   💡 Action: Run `git status` to see current file state');
+      } else if (failed.error.includes('permission')) {
+        console.log('   💡 Recommendation: Check file permissions');
+        console.log('   💡 Action: Use `chmod` to fix file permissions');
+      } else if (failed.error.includes('staged')) {
+        console.log('   💡 Recommendation: Clear staging area and try again');
+        console.log('   💡 Action: Run `git reset HEAD` to clear staging');
+      } else {
+        console.log('   💡 Recommendation: Try breaking boundary into smaller parts');
+        console.log('   💡 Action: Use interactive modification to split boundary');
+      }
+    });
   }
 }

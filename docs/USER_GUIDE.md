@@ -10,11 +10,13 @@ Mastro is an intelligent Git CLI extension that transforms how developers intera
 2. [Installation & Setup](#installation--setup)
 3. [Configuration Guide](#configuration-guide)
 4. [Core Commands](#core-commands)
-5. [Documentation Generation](#documentation-generation)
-6. [Use Cases & Workflows](#use-cases--workflows)
-7. [Team Integration](#team-integration)
-8. [Troubleshooting](#troubleshooting)
-9. [Best Practices](#best-practices)
+5. [Workflow Orchestration](#workflow-orchestration)
+6. [Boundary-Based Development](#boundary-based-development)
+7. [Error Recovery & Troubleshooting](#error-recovery--troubleshooting)
+8. [Documentation Generation](#documentation-generation)
+9. [Use Cases & Workflows](#use-cases--workflows)
+10. [Team Integration](#team-integration)
+11. [Best Practices](#best-practices)
 
 ## 🏗️ Tech Stack & Architecture
 
@@ -993,6 +995,817 @@ Add documentation configuration to your `mastro.config.json`:
     }
   }
 }
+```
+
+## 🌊 Workflow Orchestration
+
+Mastro provides intelligent workflow orchestration that automates your entire development process from code splitting through PR creation and analytics, with robust error recovery and checkpoint management.
+
+### Overview
+
+The `mastro flow` command orchestrates a complete development workflow:
+1. **Smart Code Splitting**: Analyze and split changes into logical commits
+2. **Interactive Review**: Review and customize commit boundaries
+3. **Intelligent Commits**: Generate AI-powered commit messages
+4. **Documentation**: Auto-generate comprehensive docs
+5. **PR Creation**: Create smart pull requests with migration detection
+6. **Analytics**: Track productivity and development patterns
+
+### `mastro flow` - Complete Workflow Orchestration
+
+Execute an end-to-end development workflow with intelligent automation and error recovery.
+
+#### Basic Usage
+```bash
+# Run complete workflow with defaults
+mastro flow
+
+# Execute workflow with validation at each step
+mastro flow --validate
+
+# Start workflow from a specific checkpoint
+mastro flow --recover
+
+# Force workflow execution despite errors
+mastro flow --force
+```
+
+#### Workflow Steps
+
+**Step 1: Code Analysis & Splitting**
+```bash
+# Automatically analyze working directory changes
+# Detect logical commit boundaries
+# Suggest optimal staging strategies
+[Flow] 🧩 Analyzing code changes...
+Found 3 logical boundaries:
+  • Authentication system updates (high priority)
+  • UI styling improvements (medium priority)
+  • Documentation updates (low priority)
+```
+
+**Step 2: Interactive Boundary Review**
+```bash
+# Review detected boundaries
+# Customize staging strategy
+# Validate file groupings
+[Flow] 🔍 Reviewing commit boundaries...
+✓ Authentication boundary validated
+⚠ Consider splitting large UI changes
+✓ Documentation dependencies confirmed
+```
+
+**Step 3: Progressive Commits**
+```bash
+# Execute commits in dependency order
+# Generate AI-powered commit messages
+# Handle staging area management
+[Flow] 📝 Creating commits...
+✓ feat(auth): implement JWT validation system
+✓ style(ui): update authentication form styles
+✓ docs: update authentication setup guide
+```
+
+**Step 4: Documentation Generation**
+```bash
+# Update API documentation
+# Generate architecture docs
+# Create workflow diagrams
+[Flow] 📚 Generating documentation...
+✓ API reference updated
+✓ Architecture docs refreshed
+✓ Workflow diagrams created
+```
+
+**Step 5: Smart PR Creation**
+```bash
+# Analyze changes for PR complexity
+# Detect migration requirements
+# Generate comprehensive descriptions
+[Flow] 🚀 Creating pull request...
+✓ Migration detected: API changes require client updates
+✓ PR created: feat(auth): comprehensive authentication system
+```
+
+**Step 6: Analytics & Insights**
+```bash
+# Update session analytics
+# Generate productivity insights
+# Provide workflow recommendations
+[Flow] 📊 Updating analytics...
+✓ Session updated: 87% productivity score
+✓ Pattern detected: Test-driven development
+✓ Recommendation: Continue TDD approach
+```
+
+#### Advanced Workflow Options
+
+**Validation Mode**
+```bash
+# Validate each step before execution
+mastro flow --validate
+
+# Example validation output
+[Flow] ✓ Git repository clean
+[Flow] ✓ Working directory has changes
+[Flow] ✓ No merge conflicts detected
+[Flow] ✓ Branch is up to date
+[Flow] ✓ All validations passed
+```
+
+**Recovery Mode**
+```bash
+# Resume from last checkpoint
+mastro flow --recover
+
+# Example recovery output
+[Flow] 📂 Loading checkpoint...
+Last checkpoint: step-3-commits (2 minutes ago)
+Completed: code-analysis, boundary-review
+Remaining: commits, documentation, pr-creation, analytics
+Resume from commits step? (y/n)
+```
+
+**Force Mode**
+```bash
+# Continue workflow despite errors
+mastro flow --force
+
+# Example force execution
+[Flow] ⚠ Error in documentation step: API files not found
+[Flow] 🔄 Force mode enabled - continuing workflow
+[Flow] ⏭ Skipping documentation step
+[Flow] ✓ Proceeding to PR creation
+```
+
+#### Workflow Configuration
+
+Add workflow preferences to `mastro.config.json`:
+```json
+{
+  "workflow": {
+    "autoStage": true,
+    "validateSteps": false,
+    "skipDocumentation": false,
+    "skipPR": false,
+    "skipAnalytics": false,
+    "errorRecovery": "interactive",
+    "checkpointInterval": 300,
+    "maxRetries": 3
+  }
+}
+```
+
+#### Example Complete Workflow
+
+```bash
+$ mastro flow
+
+🌊 Mastro Workflow Orchestration
+───────────────────────────────
+
+[1/6] 🧩 Analyzing code changes...
+✓ Found 3 logical commit boundaries
+✓ Dependency analysis complete
+✓ Staging strategy optimized
+
+[2/6] 🔍 Reviewing boundaries...
+✓ High priority: Authentication system (8 files)
+✓ Medium priority: UI improvements (3 files)  
+✓ Low priority: Documentation (2 files)
+✓ All boundaries validated
+
+[3/6] 📝 Creating commits...
+✓ feat(auth): implement JWT validation with RBAC
+  Files: 8 | +247 -156 | Complexity: High
+✓ style(ui): modernize authentication forms
+  Files: 3 | +89 -45 | Complexity: Low
+✓ docs: update authentication setup guide
+  Files: 2 | +134 -12 | Complexity: Low
+
+[4/6] 📚 Generating documentation...
+✓ API reference updated (auth endpoints documented)
+✓ Architecture docs updated (auth flow diagrams)
+✓ User guide sections added
+
+[5/6] 🚀 Creating pull request...
+✓ Migration analysis: API changes detected
+✓ PR template: feature (auto-detected)
+✓ PR created: https://github.com/org/repo/pull/142
+  Title: feat(auth): comprehensive JWT authentication system
+  Complexity: moderate | Migration: required
+
+[6/6] 📊 Updating analytics...
+✓ Session productivity: 91% (excellent)
+✓ Pattern detection: TDD workflow confirmed
+✓ Focus score: 88% (3 deep work sessions)
+✓ Recommendations: Continue current approach
+
+🎉 Workflow completed successfully!
+📋 Summary:
+  • 3 commits created with optimal boundaries
+  • Documentation fully updated
+  • PR ready for review with migration notes
+  • Productivity metrics excellent
+
+⏱ Total time: 4 minutes 23 seconds
+🎯 Next recommendation: Take a break - you've been coding for 2.5 hours
+```
+
+### Workflow Error Recovery
+
+The workflow orchestration includes comprehensive error recovery with multiple strategies:
+
+#### Automatic Recovery Strategies
+- **Retry Logic**: Automatic retries for transient failures
+- **Checkpoint Restoration**: Resume from last successful step
+- **Graceful Degradation**: Skip optional steps when errors occur
+- **Context Preservation**: Maintain workflow state across failures
+
+#### Manual Intervention Options
+- **Step-by-Step Execution**: Manual control over each workflow step
+- **Custom Recovery**: Define recovery actions for specific error types
+- **Rollback Capabilities**: Undo partial workflow executions
+- **Debug Mode**: Detailed error analysis and troubleshooting guidance
+
+## 🎯 Boundary-Based Development
+
+Mastro revolutionizes commit hygiene through intelligent boundary detection and interactive commit management, helping you create logical, reviewable commits that tell the story of your development process.
+
+### Philosophy
+
+**Boundary-Based Development** focuses on creating commits that represent complete, logical units of work rather than arbitrary code snapshots. Each commit should:
+- Implement a single, cohesive change
+- Include all related modifications
+- Pass all tests when applied
+- Tell a clear story in the development narrative
+
+### `mastro split` - Enhanced Smart Commit Splitting
+
+Analyze working directory changes with advanced boundary detection and interactive customization capabilities.
+
+#### Enhanced Usage Options
+
+**Interactive Review Mode**
+```bash
+# Enable comprehensive interactive boundary management
+mastro split --interactive-review
+
+# Guided boundary customization with validation
+mastro split --interactive --validate
+
+# Interactive mode with retry mechanisms
+mastro split --interactive --auto-retry
+```
+
+#### Interactive Review Features
+
+**Boundary Validation & Customization**
+```bash
+[Split] 🔍 Interactive Boundary Review Mode
+───────────────────────────────────────
+
+Current boundaries detected:
+1. Authentication System (8 files, high priority)
+2. UI Styling Updates (3 files, medium priority)
+3. Documentation (2 files, low priority)
+
+Select boundary to customize:
+  1. Review files in boundary
+  2. Split boundary further
+  3. Merge with another boundary
+  4. Remove files from boundary
+  5. Edit commit message
+  6. View detailed diff
+  7. Continue with current boundaries
+  0. Cancel and exit
+
+Choice:
+```
+
+**File Management Options**
+- **Add Files**: Include additional files in boundary
+- **Remove Files**: Exclude files from boundary
+- **Split Boundary**: Break large boundary into smaller commits
+- **Merge Boundaries**: Combine related boundaries
+- **Reorder Boundaries**: Change commit sequence
+
+**Validation & Retry System**
+```bash
+[Split] ⚠ Boundary validation failed
+Issue: Authentication boundary includes unrelated styling changes
+Files in question: src/components/LoginForm.css
+
+Options:
+  1. Move styling files to UI boundary
+  2. Create new boundary for styling
+  3. Keep files in authentication boundary
+  4. Remove styling files entirely
+  5. Get detailed explanation
+
+Auto-fix recommendation: Move to UI boundary
+Apply auto-fix? (y/n/customize)
+```
+
+**Commit Message Customization**
+```bash
+[Split] 📝 Commit Message Editor
+───────────────────────────────
+
+Boundary: Authentication System
+Current message: feat(auth): implement JWT validation with role-based access
+
+Options:
+  1. Accept current message
+  2. Edit message manually
+  3. Regenerate with different style
+  4. Add detailed body
+  5. Preview final commit
+
+Edit message? (y/n)
+```
+
+#### Advanced Boundary Detection
+
+**Dependency-Aware Analysis**
+```bash
+# Enhanced dependency analysis with import tracking
+mastro split --dependency-analysis
+
+[Split] 🔗 Dependency Analysis Results
+──────────────────────────────────────
+
+Detected dependencies:
+• auth-middleware.ts depends on user-types.ts
+• login-form.tsx imports auth-middleware.ts
+• user-service.ts uses user-types.ts interfaces
+
+Recommended boundary order:
+1. Core types and interfaces (foundation)
+2. Authentication logic (depends on types)
+3. UI components (depends on auth logic)
+4. Documentation (depends on all features)
+```
+
+**Semantic Change Detection**
+```bash
+# Advanced semantic analysis of changes
+mastro split --semantic-analysis
+
+[Split] 🧠 Semantic Change Analysis
+─────────────────────────────────────
+
+Change categories detected:
+• New Feature Implementation (67% of changes)
+  - JWT token validation system
+  - Role-based access control
+• Code Style Improvements (23% of changes)
+  - Component styling updates
+  - CSS organization
+• Documentation Updates (10% of changes)
+  - API documentation
+  - Setup instructions
+
+Semantic boundaries align with file boundaries: ✓ High confidence
+```
+
+#### Boundary Quality Metrics
+
+**Commit Quality Scoring**
+```bash
+[Split] 📊 Boundary Quality Assessment
+───────────────────────────────────────
+
+Boundary 1: Authentication System
+├─ Cohesion Score: 94/100 (Excellent)
+├─ Complexity Score: 76/100 (Good)
+├─ Risk Assessment: Medium
+├─ Reviewability: High
+└─ Test Coverage: 89% (Good)
+
+Boundary 2: UI Styling Updates  
+├─ Cohesion Score: 87/100 (Good)
+├─ Complexity Score: 34/100 (Low)
+├─ Risk Assessment: Low
+├─ Reviewability: High
+└─ Test Coverage: 45% (Needs improvement)
+
+Overall Quality: 85/100 (Good)
+Recommendation: Consider adding tests for UI changes
+```
+
+#### Example Interactive Session
+
+```bash
+$ mastro split --interactive-review
+
+🎯 Interactive Boundary Review
+─────────────────────────────
+
+[1/3] Analyzing working directory...
+✓ 13 files changed (+456 -234 lines)
+✓ 3 logical boundaries detected
+✓ Dependency analysis complete
+
+[2/3] Boundary validation...
+✓ Authentication boundary: 8 files, high cohesion
+⚠ UI boundary: Mixed styling and logic files
+✓ Documentation boundary: Clear documentation updates
+
+[3/3] Interactive customization...
+
+Boundary 2 needs attention:
+Files: LoginForm.tsx, UserProfile.tsx, auth-styles.css
+Issue: Mixed concerns detected
+
+Options:
+  1. Split into logic (tsx) and styles (css) boundaries
+  2. Keep together as UI feature boundary
+  3. Move styles to authentication boundary
+  4. Create separate styling boundary
+
+Recommendation: Split into separate boundaries for better reviewability
+
+Your choice (1-4): 1
+
+✓ Creating new boundaries...
+  • UI Logic: LoginForm.tsx, UserProfile.tsx
+  • UI Styling: auth-styles.css
+
+Updated boundaries:
+1. Authentication System (8 files) - High priority
+2. UI Component Logic (2 files) - Medium priority  
+3. UI Styling (1 file) - Low priority
+4. Documentation (2 files) - Low priority
+
+Proceed with these boundaries? (y/n/customize): y
+
+🎯 Applying staging strategy...
+✓ All boundaries staged successfully
+✓ Ready for commit workflow
+
+Next steps:
+  1. Review staged changes: git diff --staged
+  2. Create commits: mastro flow --from-staged
+  3. Continue with full workflow: mastro flow
+```
+
+### Best Practices for Boundary-Based Development
+
+#### Optimal Boundary Characteristics
+```typescript
+// Good: Single responsibility boundary
+// Files: user-auth.ts, user-types.ts, auth-middleware.ts
+feat(auth): implement JWT user authentication
+
+// Good: Related UI changes
+// Files: LoginForm.tsx, UserProfile.tsx, auth.css
+style(ui): modernize authentication components
+
+// Avoid: Mixed concerns
+// Files: user-auth.ts, LoginForm.tsx, README.md, package.json
+feat: add authentication and update styles and docs
+```
+
+#### Boundary Size Guidelines
+- **Micro Boundaries**: 1-3 files, single function/component
+- **Small Boundaries**: 4-8 files, single feature module
+- **Medium Boundaries**: 9-15 files, complex feature with tests
+- **Large Boundaries**: 16+ files (consider splitting further)
+
+#### Commit Narrative Flow
+```bash
+# Good commit sequence tells a development story
+1. feat(types): add user authentication interfaces
+2. feat(auth): implement JWT validation service
+3. feat(middleware): add authentication middleware
+4. feat(ui): create authentication components
+5. test(auth): add comprehensive authentication tests
+6. docs(auth): document authentication system
+```
+
+## 🛡️ Error Recovery & Troubleshooting
+
+Mastro provides comprehensive error recovery systems with intelligent diagnostics, automated recovery strategies, and detailed troubleshooting guidance to keep your development workflow running smoothly.
+
+### Workflow Error Recovery System
+
+#### Multi-Level Recovery Architecture
+
+**Level 1: Automatic Recovery**
+- Retry transient failures (network, file system)
+- Auto-correct common configuration issues
+- Graceful fallbacks for optional operations
+- Smart error categorization and routing
+
+**Level 2: Interactive Recovery**
+- Guided troubleshooting with step-by-step solutions
+- Multiple recovery strategy options
+- User-guided decision making for complex errors
+- Context-preserved recovery state
+
+**Level 3: Manual Recovery**
+- Detailed error analysis and root cause identification
+- Custom recovery script generation
+- Expert-level troubleshooting guidance
+- Rollback and cleanup procedures
+
+#### Checkpoint System
+
+**Automatic Checkpoints**
+```bash
+# Workflow automatically creates checkpoints
+[Flow] 💾 Creating checkpoint: step-2-boundary-review
+[Flow] ✓ Checkpoint saved to .git/mastro/checkpoints/
+
+# Checkpoint structure
+.git/mastro/checkpoints/
+├── step-1-code-analysis.json
+├── step-2-boundary-review.json
+├── step-3-commits.json (active)
+└── recovery-context.json
+```
+
+**Manual Checkpoint Management**
+```bash
+# Create manual checkpoint
+mastro flow --checkpoint "before-complex-refactor"
+
+# List available checkpoints
+mastro flow --list-checkpoints
+
+# Restore specific checkpoint
+mastro flow --restore-checkpoint step-2-boundary-review
+```
+
+#### Error Categories & Recovery Strategies
+
+**Git Repository Errors**
+```bash
+# Error: Merge conflicts detected
+[Recovery] 🔀 Merge conflicts found in 3 files
+Strategy Options:
+  1. Auto-resolve simple conflicts (safe patterns only)
+  2. Interactive conflict resolution with guidance
+  3. Abort and manual resolution required
+  4. Create conflict resolution checkpoint
+
+Recommendation: Interactive resolution (2)
+This error is recoverable with guided assistance.
+```
+
+**Staging Area Issues**
+```bash
+# Error: Inconsistent staging state
+[Recovery] 📁 Staging area inconsistency detected
+Issue: Files modified after staging, staged content outdated
+
+Recovery Options:
+  1. Re-stage all modified files
+  2. Reset staging area and re-analyze boundaries
+  3. Commit current staged content only
+  4. Interactive file-by-file staging review
+
+Auto-fix available: Re-stage modified files
+Apply auto-fix? (y/n/manual)
+```
+
+**AI Service Failures**
+```bash
+# Error: API rate limit exceeded
+[Recovery] 🤖 AI service temporarily unavailable
+Cause: OpenAI API rate limit exceeded (retry after 45 seconds)
+
+Recovery Strategies:
+  1. Wait and auto-retry (recommended)
+  2. Use cached responses for similar changes
+  3. Continue with manual commit messages
+  4. Switch to offline mode temporarily
+
+Countdown: 43 seconds remaining...
+Use cached responses while waiting? (y/n)
+```
+
+**File System Issues**
+```bash
+# Error: Permission denied
+[Recovery] 📂 File system permission error
+Files: docs/api.md, docs/architecture.md
+
+Diagnosis:
+  • Files are read-only
+  • Documentation directory may be protected
+  • Git working directory permissions inconsistent
+
+Auto-fix options:
+  1. Update file permissions (chmod 644)
+  2. Skip documentation updates
+  3. Use temporary directory for docs
+  4. Request elevated permissions
+
+Apply permission fix? (y/n/manual)
+```
+
+#### Comprehensive Error Diagnostics
+
+**Error Analysis Engine**
+```bash
+[Diagnostics] 🔍 Analyzing error context...
+───────────────────────────────────────────────
+
+Error: Command failed: git commit -m "feat(auth): implement JWT system"
+Exit code: 128
+stderr: fatal: cannot lock ref 'refs/heads/feature-auth'
+
+Root Cause Analysis:
+├─ Git Lock File Issue: Another git process may be running
+├─ System Context: VSCode git integration active
+├─ Process Check: Found git process (PID 12345)
+├─ Lock Files: .git/refs/heads/feature-auth.lock exists
+└─ Solution Confidence: 95% (high)
+
+Automated Recovery Plan:
+1. Wait for git process to complete (30 seconds max)
+2. Remove stale lock files if process ended
+3. Retry commit operation
+4. Verify repository integrity
+
+Execute automated recovery? (y/n/details)
+```
+
+**Context-Aware Troubleshooting**
+```bash
+[Troubleshooting] 💡 Intelligent Error Resolution
+──────────────────────────────────────────────────
+
+Based on your development patterns and current context:
+
+Recent Context:
+• Working on authentication feature for 2.5 hours
+• 89% completion rate in similar workflows
+• TDD pattern detected in current session
+
+Error Pattern Match:
+This error commonly occurs during complex feature development
+when multiple git operations happen simultaneously.
+
+Personalized Solutions:
+1. Your typical approach: Wait and retry (success rate: 94%)
+2. Alternative: Use staging area reset (your fallback method)
+3. Advanced: Split commits further (you used this pattern before)
+
+Recommended solution based on your preferences: Wait and retry
+This matches your successful pattern from 3 similar situations.
+```
+
+#### Recovery Validation & Testing
+
+**Recovery Success Verification**
+```bash
+[Recovery] ✅ Validating recovery success...
+──────────────────────────────────────────────
+
+Validation Checks:
+├─ Git repository integrity: ✓ Passed
+├─ Working directory consistency: ✓ Passed
+├─ Staging area verification: ✓ Passed
+├─ Workflow context preservation: ✓ Passed
+├─ Checkpoint data integrity: ✓ Passed
+└─ Error condition resolved: ✓ Passed
+
+Recovery successful! Workflow can continue safely.
+Next step: boundary-review (resumed from checkpoint)
+```
+
+**Post-Recovery Recommendations**
+```bash
+[Recovery] 💫 Post-Recovery Optimization
+─────────────────────────────────────────
+
+Success! Error resolved and workflow resumed.
+
+Preventive Measures:
+• Consider: git config core.precomposeunicode true (prevents similar issues)
+• Optimization: Increase git lock timeout for complex repositories
+• Monitoring: Enable git operation logging for better diagnostics
+
+Learning Opportunity:
+This error type can be prevented by:
+1. Closing VSCode git integration during mastro workflows
+2. Using mastro's built-in git operations exclusively
+3. Setting git.autoFetch=false in repository configuration
+
+Apply preventive measures? (y/n/explain)
+```
+
+#### Manual Recovery Procedures
+
+**Emergency Recovery Mode**
+```bash
+# Enter emergency recovery when automated recovery fails
+mastro flow --emergency-recovery
+
+[Emergency] 🚨 Emergency Recovery Mode
+───────────────────────────────────────
+
+This mode provides maximum control for complex recovery scenarios.
+
+Available Actions:
+  1. Analyze current state in detail
+  2. Generate custom recovery script
+  3. Reset to known good state
+  4. Export workflow context for manual resolution
+  5. Contact support with diagnostic bundle
+
+Current State Analysis:
+├─ Git Status: Modified files in working directory
+├─ Staging Area: 8 files staged, 3 conflicts
+├─ Workflow Context: Step 3 of 6 (commits phase)
+├─ Last Checkpoint: 5 minutes ago (recovery available)
+└─ Error History: 3 related errors in last 10 minutes
+
+Recommendation: Generate custom recovery script (2)
+```
+
+**Recovery Script Generation**
+```bash
+[Emergency] 📝 Generating Custom Recovery Script...
+
+#!/bin/bash
+# Custom Recovery Script - Generated by Mastro
+# Error: Git commit failures with staging conflicts
+# Context: Authentication feature development workflow
+
+echo "Starting manual recovery process..."
+
+# Step 1: Preserve current work
+git stash push -m "mastro-recovery-$(date +%s)"
+
+# Step 2: Clean git state
+git reset --hard HEAD
+git clean -fd
+
+# Step 3: Restore checkpoint
+cp .git/mastro/checkpoints/step-2-boundary-review.json .git/mastro/active-context.json
+
+# Step 4: Re-apply stashed changes
+git stash pop
+
+# Step 5: Validate recovery
+echo "Recovery complete. Run 'mastro flow --validate' to continue."
+
+Save recovery script as: recovery-$(date +%s).sh? (y/n)
+```
+
+### Common Error Scenarios & Solutions
+
+#### Workflow Interruption Recovery
+```bash
+# Scenario: Process killed mid-workflow
+$ mastro flow --recover
+
+[Recovery] 🔄 Detecting interrupted workflow...
+Found: Incomplete workflow from 10 minutes ago
+Context: Authentication feature, step 4/6 (documentation)
+
+Safe Recovery Options:
+  1. Resume from last checkpoint (recommended)
+  2. Restart from beginning
+  3. Skip to next step manually
+  4. Analyze what's been completed
+
+Choose recovery approach (1-4): 1
+```
+
+#### Configuration & Environment Issues
+```bash
+# Scenario: Missing dependencies or configuration
+[Recovery] ⚙️ Configuration Issue Detected
+Problem: OpenAI API key not configured
+
+Quick Fix Available:
+  1. Set environment variable: export OPENAI_API_KEY="your-key"
+  2. Update config file: mastro config:init
+  3. Skip AI features temporarily
+  4. Use offline mode with cached responses
+
+Apply quick fix (1-4): 2
+```
+
+#### Performance & Resource Issues
+```bash
+# Scenario: System resource constraints
+[Recovery] 📊 Performance Issue Detected
+Cause: Repository analysis exceeding memory limits (2.1GB used)
+
+Optimization Options:
+  1. Enable streaming analysis mode
+  2. Increase analysis chunk size
+  3. Skip large file analysis temporarily
+  4. Use performance mode (reduced features)
+
+Recommended: Streaming analysis mode (maintains full functionality)
+Apply optimization? (y/n/details)
 ```
 
 ## 🔄 Use Cases & Workflows

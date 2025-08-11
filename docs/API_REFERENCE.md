@@ -12,9 +12,13 @@ This document provides comprehensive API documentation for all interfaces, class
 4. [Git Analysis Types](#git-analysis-types)
 5. [Review System Types](#review-system-types)
 6. [Session Management Types](#session-management-types)
-7. [CLI Command Options](#cli-command-options)
-8. [Plugin Development](#plugin-development)
-9. [Integration Patterns](#integration-patterns)
+7. [Workflow Orchestration Types](#workflow-orchestration-types)
+8. [Interactive Boundary Types](#interactive-boundary-types)
+9. [Error Recovery Types](#error-recovery-types)
+10. [Focus Session Types](#focus-session-types)
+11. [CLI Command Options](#cli-command-options)
+12. [Plugin Development](#plugin-development)
+13. [Integration Patterns](#integration-patterns)
 
 ## 🔧 Core Interfaces
 
@@ -697,6 +701,595 @@ interface UserFlow {
 }
 ```
 
+## 🌊 Workflow Orchestration Types
+
+### `WorkflowContext`
+Complete context for workflow orchestration operations.
+
+```typescript
+interface WorkflowContext {
+  sessionId: string;
+  workingDirectory: string;
+  currentBranch: string;
+  baseCommit: string;
+  skipDocumentation?: boolean;
+  skipPR?: boolean;
+  skipAnalytics?: boolean;
+  boundaries?: CommitBoundary[];
+  checkpoints?: WorkflowCheckpoint[];
+  lastCheckpoint?: WorkflowCheckpoint;
+}
+```
+
+**Properties:**
+- `sessionId`: Unique identifier for the workflow session
+- `workingDirectory`: Absolute path to the Git repository
+- `currentBranch`: Name of the current Git branch
+- `baseCommit`: Base commit hash for workflow operations
+- `skipDocumentation`: Optional flag to skip documentation generation
+- `skipPR`: Optional flag to skip pull request creation
+- `skipAnalytics`: Optional flag to skip analytics updates
+- `boundaries`: Detected commit boundaries for the workflow
+- `checkpoints`: Available workflow checkpoints
+- `lastCheckpoint`: Most recent checkpoint for recovery
+
+### `WorkflowCheckpoint`
+Checkpoint data for workflow recovery operations.
+
+```typescript
+interface WorkflowCheckpoint {
+  id: string;
+  timestamp: Date;
+  step: WorkflowStep;
+  stepNumber: number;
+  totalSteps: number;
+  description: string;
+  context: WorkflowContext;
+  data: Record<string, any>;
+  success: boolean;
+  error?: WorkflowError;
+  nextSteps: WorkflowStep[];
+}
+```
+
+**Properties:**
+- `id`: Unique checkpoint identifier
+- `timestamp`: When the checkpoint was created
+- `step`: Current workflow step identifier
+- `stepNumber`: Current step number (1-based)
+- `totalSteps`: Total number of steps in the workflow
+- `description`: Human-readable step description
+- `context`: Complete workflow context at checkpoint
+- `data`: Step-specific data for recovery
+- `success`: Whether the step completed successfully
+- `error`: Error information if step failed
+- `nextSteps`: Available next steps from this checkpoint
+
+### `WorkflowStep`
+Individual workflow step definition.
+
+```typescript
+type WorkflowStep = 
+  | 'code-analysis' 
+  | 'boundary-review' 
+  | 'commits' 
+  | 'documentation' 
+  | 'pr-creation' 
+  | 'analytics';
+
+interface WorkflowStepConfig {
+  step: WorkflowStep;
+  enabled: boolean;
+  timeout?: number;
+  retryAttempts?: number;
+  dependencies?: WorkflowStep[];
+  validation?: WorkflowValidation;
+}
+```
+
+### `WorkflowValidation`
+Validation configuration for workflow steps.
+
+```typescript
+interface WorkflowValidation {
+  enabled: boolean;
+  rules: WorkflowValidationRule[];
+  stopOnFailure: boolean;
+}
+
+interface WorkflowValidationRule {
+  type: 'git-status' | 'working-changes' | 'staged-changes' | 'branch-state';
+  condition: 'must-exist' | 'must-not-exist' | 'must-equal' | 'must-contain';
+  value?: any;
+  message: string;
+}
+```
+
+### `WorkflowError`
+Error information for workflow operations.
+
+```typescript
+interface WorkflowError {
+  code: WorkflowErrorCode;
+  message: string;
+  step: WorkflowStep;
+  cause?: Error;
+  context?: Record<string, any>;
+  recoverable: boolean;
+  suggestions: string[];
+  recovery?: WorkflowRecoveryStrategy;
+}
+
+type WorkflowErrorCode = 
+  | 'VALIDATION_FAILED'
+  | 'GIT_ERROR'
+  | 'AI_SERVICE_ERROR'
+  | 'FILE_SYSTEM_ERROR'
+  | 'TIMEOUT_ERROR'
+  | 'USER_CANCELLED'
+  | 'DEPENDENCY_ERROR';
+```
+
+### `WorkflowRecoveryStrategy`
+Strategy for recovering from workflow errors.
+
+```typescript
+interface WorkflowRecoveryStrategy {
+  type: 'retry' | 'skip' | 'rollback' | 'manual' | 'checkpoint';
+  description: string;
+  automated: boolean;
+  steps: string[];
+  data?: Record<string, any>;
+}
+```
+
+## 🎯 Interactive Boundary Types
+
+### `InteractiveBoundarySession`
+Session state for interactive boundary review.
+
+```typescript
+interface InteractiveBoundarySession {
+  sessionId: string;
+  boundaries: CommitBoundary[];
+  currentBoundaryIndex: number;
+  modifications: BoundaryModification[];
+  validationResults: BoundaryValidationResult[];
+  retryHistory: BoundaryRetryAttempt[];
+  userChoices: UserChoice[];
+}
+```
+
+### `BoundaryModification`
+Modifications made to commit boundaries during interactive review.
+
+```typescript
+interface BoundaryModification {
+  id: string;
+  timestamp: Date;
+  type: 'split' | 'merge' | 'add-files' | 'remove-files' | 'reorder' | 'edit-message';
+  boundaryId: string;
+  before: CommitBoundary;
+  after: CommitBoundary;
+  reason: string;
+  automated: boolean;
+}
+```
+
+### `BoundaryValidationResult`
+Results from boundary validation during interactive review.
+
+```typescript
+interface BoundaryValidationResult {
+  boundaryId: string;
+  valid: boolean;
+  score: number; // 0-100 quality score
+  issues: BoundaryValidationIssue[];
+  suggestions: BoundarySuggestion[];
+  confidence: number; // 0-1 confidence in validation
+}
+
+interface BoundaryValidationIssue {
+  type: 'mixed-concerns' | 'large-boundary' | 'missing-dependencies' | 'circular-dependencies';
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  affectedFiles: string[];
+  suggestion?: string;
+}
+
+interface BoundarySuggestion {
+  type: 'split-boundary' | 'merge-boundaries' | 'move-files' | 'reorder-boundaries';
+  description: string;
+  confidence: number;
+  effort: 'low' | 'medium' | 'high';
+  impact: 'positive' | 'neutral' | 'negative';
+  autoApplicable: boolean;
+}
+```
+
+### `BoundaryRetryAttempt`
+Information about retry attempts during boundary customization.
+
+```typescript
+interface BoundaryRetryAttempt {
+  id: string;
+  timestamp: Date;
+  boundaryId: string;
+  operation: 'validation' | 'split' | 'merge' | 'file-management';
+  attempt: number;
+  maxAttempts: number;
+  success: boolean;
+  error?: string;
+  recoveryAction?: string;
+  userInput?: any;
+}
+```
+
+### `UserChoice`
+User decisions made during interactive boundary review.
+
+```typescript
+interface UserChoice {
+  timestamp: Date;
+  context: string;
+  options: string[];
+  selectedOption: number;
+  selectedValue?: any;
+  reasoning?: string;
+  confidence: number;
+}
+```
+
+### `InteractiveBoundaryOptions`
+Configuration for interactive boundary review session.
+
+```typescript
+interface InteractiveBoundaryOptions {
+  enableValidation: boolean;
+  enableRetry: boolean;
+  maxRetries: number;
+  autoApplySuggestions: boolean;
+  validationThreshold: number; // 0-100 minimum boundary quality score
+  showDetailedDiffs: boolean;
+  allowBoundaryMerging: boolean;
+  allowBoundarySplitting: boolean;
+  timeoutMs?: number;
+}
+```
+
+## 🛡️ Error Recovery Types
+
+### `RecoveryContext`
+Context information for error recovery operations.
+
+```typescript
+interface RecoveryContext {
+  sessionId: string;
+  error: WorkflowError;
+  currentState: WorkflowState;
+  availableCheckpoints: WorkflowCheckpoint[];
+  recoverySuggestions: RecoveryStrategy[];
+  userPreferences: RecoveryPreferences;
+  diagnostics: ErrorDiagnostics;
+}
+```
+
+### `WorkflowState`
+Current state of workflow execution.
+
+```typescript
+interface WorkflowState {
+  currentStep: WorkflowStep;
+  stepNumber: number;
+  totalSteps: number;
+  completedSteps: WorkflowStep[];
+  failedSteps: Array<{ step: WorkflowStep; error: WorkflowError }>;
+  skippedSteps: WorkflowStep[];
+  context: WorkflowContext;
+  startTime: Date;
+  lastActivity: Date;
+}
+```
+
+### `RecoveryStrategy`
+Specific recovery strategy for workflow errors.
+
+```typescript
+interface RecoveryStrategy {
+  id: string;
+  type: 'automatic' | 'interactive' | 'manual';
+  level: 1 | 2 | 3; // Recovery level (1=auto, 2=interactive, 3=manual)
+  name: string;
+  description: string;
+  confidence: number; // 0-1 confidence in success
+  estimatedTime: string; // e.g., "30 seconds", "2 minutes"
+  prerequisites: string[];
+  steps: RecoveryStep[];
+  rollback?: RollbackPlan;
+}
+
+interface RecoveryStep {
+  description: string;
+  action: 'validate' | 'retry' | 'reset' | 'cleanup' | 'restore' | 'skip';
+  parameters?: Record<string, any>;
+  timeout?: number;
+  validation?: ValidationCheck;
+}
+
+interface ValidationCheck {
+  type: string;
+  description: string;
+  check: () => Promise<boolean>;
+}
+```
+
+### `RollbackPlan`
+Plan for rolling back partial workflow execution.
+
+```typescript
+interface RollbackPlan {
+  enabled: boolean;
+  steps: Array<{
+    description: string;
+    action: 'git-reset' | 'file-restore' | 'cleanup' | 'checkpoint-restore';
+    target?: string;
+    safe: boolean; // Whether this action is safe (won't lose data)
+  }>;
+  dataPreservation: Array<{
+    type: 'stash' | 'backup' | 'checkpoint';
+    description: string;
+    location: string;
+  }>;
+}
+```
+
+### `ErrorDiagnostics`
+Comprehensive error analysis and context.
+
+```typescript
+interface ErrorDiagnostics {
+  errorId: string;
+  timestamp: Date;
+  rootCause: ErrorCause;
+  contributingFactors: string[];
+  systemContext: SystemContext;
+  userContext: UserContext;
+  similarErrors: SimilarError[];
+  expertAnalysis: string;
+  confidence: number;
+}
+
+interface ErrorCause {
+  category: 'git' | 'ai-service' | 'filesystem' | 'network' | 'user' | 'config' | 'unknown';
+  specific: string;
+  technical: string;
+  userFriendly: string;
+}
+
+interface SystemContext {
+  os: string;
+  nodeVersion: string;
+  mastroVersion: string;
+  gitVersion: string;
+  workingDirectory: string;
+  repositoryState: any;
+  runningProcesses?: string[];
+  resourceUsage?: {
+    memory: number;
+    cpu: number;
+    disk: number;
+  };
+}
+
+interface UserContext {
+  recentCommands: string[];
+  currentSession: {
+    duration: number;
+    pattern: string;
+    productivity: number;
+  };
+  preferences: RecoveryPreferences;
+  experience: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+}
+
+interface SimilarError {
+  errorId: string;
+  similarity: number;
+  resolution: string;
+  success: boolean;
+  timesOccurred: number;
+}
+```
+
+### `RecoveryPreferences`
+User preferences for error recovery behavior.
+
+```typescript
+interface RecoveryPreferences {
+  defaultStrategy: 'conservative' | 'aggressive' | 'interactive';
+  autoRetry: boolean;
+  maxRetries: number;
+  timeoutPreference: number;
+  backupPreference: 'always' | 'on-risk' | 'never';
+  notificationLevel: 'verbose' | 'normal' | 'quiet';
+  learnFromErrors: boolean;
+}
+```
+
+### `CheckpointManager`
+Interface for managing workflow checkpoints.
+
+```typescript
+interface CheckpointManager {
+  create(step: WorkflowStep, context: WorkflowContext, data?: any): Promise<WorkflowCheckpoint>;
+  list(): Promise<WorkflowCheckpoint[]>;
+  restore(checkpointId: string): Promise<WorkflowContext>;
+  delete(checkpointId: string): Promise<void>;
+  cleanup(olderThanMs?: number): Promise<number>;
+  validate(checkpointId: string): Promise<boolean>;
+}
+```
+
+## 🎯 Focus Session Types
+
+### `FocusSession`
+Enhanced focus session with productivity tracking.
+
+```typescript
+interface FocusSession {
+  id: string;
+  startTime: Date;
+  endTime?: Date;
+  duration: number; // milliseconds
+  initialState: GitState;
+  currentState: GitState;
+  changes: FocusSessionChange[];
+  interruptions: FocusInterruption[];
+  productivity: FocusProductivityMetrics;
+  patterns: FocusPattern[];
+  goals: FocusGoal[];
+  status: 'active' | 'paused' | 'completed' | 'cancelled';
+}
+
+interface GitState {
+  branch: string;
+  commit: string;
+  staged: number;
+  unstaged: number;
+  untracked: number;
+  totalFiles: number;
+}
+
+interface FocusSessionChange {
+  timestamp: Date;
+  type: 'file-modified' | 'file-added' | 'file-deleted' | 'commit' | 'branch-switch';
+  files: string[];
+  impact: 'low' | 'medium' | 'high';
+  context?: string;
+}
+
+interface FocusInterruption {
+  timestamp: Date;
+  type: 'context-switch' | 'external-interrupt' | 'break' | 'meeting';
+  duration: number;
+  cause?: string;
+  impact: 'minimal' | 'moderate' | 'significant';
+}
+```
+
+### `FocusProductivityMetrics`
+Detailed productivity measurements during focus sessions.
+
+```typescript
+interface FocusProductivityMetrics {
+  score: number; // 0-100 overall productivity score
+  velocity: {
+    linesPerMinute: number;
+    filesPerHour: number;
+    commitsPerHour: number;
+  };
+  focus: {
+    deepWorkSessions: number;
+    averageSessionLength: number; // minutes
+    interruptionFrequency: number; // per hour
+    focusRatio: number; // 0-1, time spent in deep work vs total
+  };
+  quality: {
+    testCoverageChange: number; // percentage points
+    complexityTrend: 'improving' | 'stable' | 'degrading';
+    codeReviewScore: number; // 0-100
+  };
+  patterns: {
+    peakHours: number[];
+    optimalSessionLength: number;
+    bestDayPattern: string;
+  };
+}
+```
+
+### `FocusPattern`
+Detected patterns during focus sessions.
+
+```typescript
+interface FocusPattern {
+  type: 'tdd' | 'refactor-first' | 'feature-focused' | 'bug-fixing' | 'exploration';
+  confidence: number; // 0-1
+  evidence: string[];
+  impact: 'positive' | 'neutral' | 'negative';
+  recommendation: string;
+  duration: number; // milliseconds pattern was active
+}
+```
+
+### `FocusGoal`
+Goals and objectives for focus sessions.
+
+```typescript
+interface FocusGoal {
+  id: string;
+  description: string;
+  type: 'feature' | 'bugfix' | 'refactor' | 'learning' | 'planning';
+  targetDuration?: number; // minutes
+  progress: number; // 0-1
+  completed: boolean;
+  metrics?: {
+    linesTarget?: number;
+    filesTarget?: number;
+    testsTarget?: number;
+  };
+  milestones: FocusMilestone[];
+}
+
+interface FocusMilestone {
+  description: string;
+  completed: boolean;
+  timestamp?: Date;
+  evidence?: string[];
+}
+```
+
+### `FocusSessionMonitor`
+Interface for monitoring active focus sessions.
+
+```typescript
+interface FocusSessionMonitor {
+  startSession(goals?: FocusGoal[]): Promise<FocusSession>;
+  pauseSession(sessionId: string): Promise<void>;
+  resumeSession(sessionId: string): Promise<void>;
+  endSession(sessionId: string): Promise<FocusSession>;
+  getCurrentSession(): Promise<FocusSession | null>;
+  updateSessionData(sessionId: string): Promise<void>;
+  analyzeProductivity(sessionId: string): Promise<FocusProductivityMetrics>;
+}
+```
+
+### `FocusConfiguration`
+Configuration for focus mode and session monitoring.
+
+```typescript
+interface FocusConfiguration {
+  enabled: boolean;
+  autoTrack: boolean;
+  sessionTimeout: number; // minutes
+  breakReminders: boolean;
+  breakInterval: number; // minutes
+  deepWorkThreshold: number; // minutes for deep work session
+  productivityTracking: boolean;
+  patternDetection: boolean;
+  notifications: {
+    sessionStart: boolean;
+    achievements: boolean;
+    breaks: boolean;
+    sessionEnd: boolean;
+  };
+  goals: {
+    dailyHours?: number;
+    weeklyHours?: number;
+    focusRatio?: number; // target focus ratio 0-1
+  };
+}
+```
+
 ## 🧩 Phase 4A: Smart Commit Splitting Types
 
 ### `CommitBoundary`
@@ -891,6 +1484,54 @@ interface ValidationIssue {
 
 ## 🚀 CLI Command Options
 
+### `mastro flow` - Workflow Orchestration
+Execute complete development workflows with intelligent automation and error recovery.
+
+```typescript
+interface FlowFlags {
+  validate: boolean;               // Validate each step before execution
+  recover: boolean;                // Resume from last checkpoint
+  force: boolean;                  // Continue workflow despite errors
+  'checkpoint': string;            // Create manual checkpoint with description
+  'list-checkpoints': boolean;     // List available checkpoints
+  'restore-checkpoint': string;    // Restore specific checkpoint by ID
+  'emergency-recovery': boolean;   // Enter emergency recovery mode
+  'skip-docs': boolean;            // Skip documentation generation
+  'skip-pr': boolean;              // Skip pull request creation
+  'skip-analytics': boolean;       // Skip analytics updates
+  format: 'terminal' | 'json' | 'markdown';
+}
+
+// Workflow Actions
+type FlowAction = 
+  | 'execute'           // Default: run complete workflow
+  | 'validate'          // Validate current state and show steps
+  | 'recover'           // Resume from checkpoint
+  | 'checkpoints'       // Manage checkpoints
+  | 'emergency';        // Emergency recovery mode
+```
+
+**Usage Examples:**
+```bash
+# Execute complete workflow
+mastro flow
+
+# Validate before executing each step
+mastro flow --validate
+
+# Resume from last checkpoint
+mastro flow --recover
+
+# Create checkpoint before complex operation
+mastro flow --checkpoint "before-major-refactor"
+
+# Emergency recovery when automated recovery fails
+mastro flow --emergency-recovery
+
+# Skip specific steps
+mastro flow --skip-docs --skip-analytics
+```
+
 ### `mastro commit`
 
 ```typescript
@@ -947,19 +1588,45 @@ interface PRCreateFlags {
 }
 ```
 
-### `mastro split` - Phase 4A
-Smart commit splitting and auto-staging.
+### `mastro split` - Enhanced Smart Commit Splitting
+Intelligent commit boundary detection with interactive review and validation.
 
 ```typescript
 interface SplitFlags {
   'auto-stage': boolean;               // Automatically stage files according to boundaries
   'dry-run': boolean;                  // Show analysis without making changes
-  interactive: boolean;                // Enable boundary customization
+  interactive: boolean;                // Enable boundary customization (legacy)
+  'interactive-review': boolean;       // Enhanced interactive boundary management
+  validate: boolean;                   // Enable boundary validation
+  'auto-retry': boolean;               // Enable automatic retry mechanisms
+  'dependency-analysis': boolean;      // Include dependency-aware analysis
+  'semantic-analysis': boolean;        // Enable semantic change detection
   format: 'terminal' | 'json' | 'markdown';
   'complexity-threshold': number;      // Minimum complexity for boundary detection
+  'validation-threshold': number;      // Minimum boundary quality score (0-100)
   ignore: string;                      // File patterns to ignore (glob)
   force: boolean;                      // Force boundary detection for small changes
+  'max-boundaries': number;            // Maximum number of boundaries to create
+  'timeout': number;                   // Timeout for interactive operations (seconds)
 }
+```
+
+**Enhanced Usage Examples:**
+```bash
+# Basic boundary analysis
+mastro split
+
+# Interactive boundary customization with validation
+mastro split --interactive-review --validate
+
+# Dependency-aware analysis with semantic detection
+mastro split --dependency-analysis --semantic-analysis
+
+# Auto-stage with quality validation
+mastro split --auto-stage --validation-threshold=80
+
+# Interactive mode with retry mechanisms
+mastro split --interactive-review --auto-retry --max-boundaries=5
 ```
 
 ### `mastro analytics` - Phase 4A

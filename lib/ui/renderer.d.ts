@@ -18,6 +18,7 @@ export declare class UIRenderer {
     renderRisk(risk: string): string;
     private renderScope;
     private renderRating;
+    protected normalizeRating(rating: any): string;
     private renderSuggestion;
     renderTitle(title: string): string;
     renderSection(title: string, items: string[]): string;

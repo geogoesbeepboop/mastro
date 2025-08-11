@@ -6,6 +6,7 @@ export declare class GitAnalyzer {
     isRepository(): Promise<boolean>;
     getRepoRoot(): Promise<string>;
     getCurrentBranch(): Promise<string>;
+    getCurrentCommit(): Promise<string>;
     getStagedChanges(): Promise<GitChange[]>;
     getWorkingChanges(): Promise<GitChange[]>;
     getBranchChanges(branch: string, baseBranch?: string): Promise<GitChange[]>;
@@ -21,5 +22,9 @@ export declare class GitAnalyzer {
     private getHunks;
     private parseDiffHunks;
     parseDiffForFile(diff: string, file: string, type: GitChange['type']): GitChange;
+    /**
+     * Parse git diff output and return array of GitChange objects
+     */
+    parseDiffOutput(diffOutput: string): GitChange[];
 }
 //# sourceMappingURL=git-analyzer.d.ts.map

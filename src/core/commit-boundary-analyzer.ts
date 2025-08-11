@@ -1,6 +1,7 @@
 import type {GitChange, CommitContext, MastroConfig} from '../types/index.js';
 import {SemanticAnalyzer} from '../analyzers/semantic-analyzer.js';
 import {ImpactAnalyzer} from '../analyzers/impact-analyzer.js';
+import {AIClient} from './ai-client.js';
 
 export interface CommitBoundary {
   id: string;
@@ -41,39 +42,49 @@ export interface FileRelationship {
  * and suggest optimal staging strategies for better commit hygiene.
  */
 export class CommitBoundaryAnalyzer {
+  private aiClient: AIClient;
+
   constructor(
     private config: MastroConfig,
     private semanticAnalyzer: SemanticAnalyzer,
     private impactAnalyzer: ImpactAnalyzer
-  ) {}
+  ) {
+    this.aiClient = new AIClient({
+      provider: config.ai.provider,
+      apiKey: config.ai.apiKey,
+      model: config.ai.model,
+      maxTokens: config.ai.maxTokens,
+      temperature: config.ai.temperature
+    });
+  }
 
   /**
    * Main entry point: analyze all working changes and detect commit boundaries
    */
   async analyzeCommitBoundaries(changes: GitChange[]): Promise<CommitBoundary[]> {
-    if (changes.length <= 3) {
-      // Small change set - probably doesn't need splitting
-      return [{
-        id: 'single-commit',
-        files: changes,
-        reasoning: 'Small change set - single commit recommended',
-        priority: 'high',
-        estimatedComplexity: this.calculateComplexity(changes),
-        dependencies: [],
-        theme: await this.detectTheme(changes)
-      }];
+    if (changes.length === 0) {
+      return [];
     }
 
+    // Use AI-powered analysis for better boundary detection
+    const aiAnalysis = await this.performAIBoundaryAnalysis(changes);
+    
+    // If AI analysis yields good boundaries, use them
+    if (aiAnalysis.boundaries.length > 1 || changes.length > 8) {
+      return this.optimizeBoundaries(aiAnalysis.boundaries);
+    }
+
+    // For smaller sets, still do traditional analysis but enhanced with AI categorization
     // 1. Analyze file relationships
     const relationships = await this.analyzeFileRelationships(changes);
     
-    // 2. Group by impact/concern
-    const impactGroups = await this.groupByImpact(changes);
+    // 2. Group by AI-enhanced impact analysis
+    const impactGroups = await this.groupByImpactWithAI(changes);
     
     // 3. Build dependency graph
     const dependencyGraph = await this.buildDependencyGraph(changes);
     
-    // 4. Detect boundaries using clustering
+    // 4. Detect boundaries using enhanced clustering
     const boundaries = await this.detectBoundariesML(relationships, impactGroups, dependencyGraph);
     
     return this.optimizeBoundaries(boundaries);
@@ -413,33 +424,142 @@ export class CommitBoundaryAnalyzer {
   }
 
   private async detectTheme(files: GitChange[]): Promise<string> {
-    // Simple theme detection based on file paths and change patterns
+    // Enhanced theme detection based on file paths, extensions, and change patterns
     const themes = new Map<string, number>();
     
-    for (const file of files) {
-      const path = file.file.toLowerCase();
-      
-      if (path.includes('auth') || path.includes('login') || path.includes('user')) {
-        themes.set('authentication', (themes.get('authentication') || 0) + 1);
-      }
-      if (path.includes('ui') || path.includes('component') || path.includes('style')) {
-        themes.set('user interface', (themes.get('user interface') || 0) + 1);
-      }
-      if (path.includes('api') || path.includes('route') || path.includes('endpoint')) {
-        themes.set('api development', (themes.get('api development') || 0) + 1);
-      }
-      if (path.includes('test') || path.includes('spec')) {
-        themes.set('testing', (themes.get('testing') || 0) + 1);
-      }
-      if (path.includes('config') || path.includes('env')) {
-        themes.set('configuration', (themes.get('configuration') || 0) + 1);
+    // Categorize files by directory and purpose first
+    const docFiles = files.filter(f => this.isDocumentationFile(f.file));
+    const testFiles = files.filter(f => this.isTestFile(f.file));
+    const configFiles = files.filter(f => this.isConfigFile(f.file));
+    const sourceFiles = files.filter(f => !this.isDocumentationFile(f.file) && !this.isTestFile(f.file) && !this.isConfigFile(f.file));
+    
+    // Documentation changes
+    if (docFiles.length > 0) {
+      if (docFiles.length === files.length) {
+        // All files are documentation
+        themes.set('documentation', docFiles.length * 2);
+      } else {
+        // Mixed with other files
+        themes.set('documentation', docFiles.length);
       }
     }
     
-    if (themes.size === 0) return 'code improvements';
+    // Test changes
+    if (testFiles.length > 0) {
+      themes.set('testing', testFiles.length * 1.5);
+    }
+    
+    // Configuration changes  
+    if (configFiles.length > 0) {
+      themes.set('configuration', configFiles.length);
+    }
+    
+    // Analyze source files for specific patterns
+    for (const file of sourceFiles) {
+      const path = file.file.toLowerCase();
+      const fileName = file.file.split('/').pop()?.toLowerCase() || '';
+      
+      // Authentication-related
+      if (path.includes('auth') || path.includes('login') || path.includes('signin') || 
+          path.includes('jwt') || fileName.includes('auth')) {
+        themes.set('authentication', (themes.get('authentication') || 0) + 2);
+      }
+      
+      // UI/Frontend-related
+      if (path.includes('component') || path.includes('ui/') || path.includes('frontend') ||
+          fileName.endsWith('.vue') || fileName.endsWith('.jsx') || fileName.endsWith('.tsx') ||
+          path.includes('style') || path.includes('css')) {
+        themes.set('user interface', (themes.get('user interface') || 0) + 2);
+      }
+      
+      // API/Backend-related (but not docs)
+      if ((path.includes('api/') || path.includes('route') || path.includes('endpoint') || 
+           path.includes('controller') || path.includes('service')) && 
+          !this.isDocumentationFile(file.file)) {
+        themes.set('backend development', (themes.get('backend development') || 0) + 2);
+      }
+      
+      // Database-related
+      if (path.includes('model') || path.includes('schema') || path.includes('migration') ||
+          path.includes('database') || fileName.includes('db')) {
+        themes.set('database', (themes.get('database') || 0) + 2);
+      }
+      
+      // Security-related
+      if (path.includes('security') || path.includes('permission') || path.includes('role') ||
+          path.includes('csrf') || path.includes('xss')) {
+        themes.set('security', (themes.get('security') || 0) + 2);
+      }
+      
+      // Performance/optimization
+      if (path.includes('optimize') || path.includes('cache') || path.includes('performance') ||
+          path.includes('lazy') || path.includes('bundle')) {
+        themes.set('performance', (themes.get('performance') || 0) + 2);
+      }
+      
+      // Bug fixes (analyze change patterns)
+      if (this.isBugFixFile(file)) {
+        themes.set('bug fixes', (themes.get('bug fixes') || 0) + 1.5);
+      }
+      
+      // Feature development (fallback for source files)
+      if (!themes.has('authentication') && !themes.has('user interface') && 
+          !themes.has('backend development') && !themes.has('database') && 
+          !themes.has('security') && !themes.has('performance')) {
+        themes.set('feature development', (themes.get('feature development') || 0) + 1);
+      }
+    }
+    
+    // Default themes based on file types if no specific theme detected
+    if (themes.size === 0) {
+      if (files.every(f => this.isDocumentationFile(f.file))) {
+        return 'documentation updates';
+      } else if (files.every(f => this.isTestFile(f.file))) {
+        return 'testing improvements';
+      } else if (files.every(f => this.isConfigFile(f.file))) {
+        return 'configuration changes';
+      } else {
+        return 'code improvements';
+      }
+    }
     
     // Return the most common theme
     return Array.from(themes.entries()).sort((a, b) => b[1] - a[1])[0][0];
+  }
+  
+  private isDocumentationFile(filePath: string): boolean {
+    const path = filePath.toLowerCase();
+    return path.includes('readme') || path.includes('doc') || 
+           path.endsWith('.md') || path.endsWith('.rst') || 
+           path.includes('changelog') || path.includes('license') ||
+           path.includes('contributing') || path.includes('guide');
+  }
+  
+  private isTestFile(filePath: string): boolean {
+    const path = filePath.toLowerCase();
+    return path.includes('test') || path.includes('spec') || 
+           path.includes('__tests__') || path.includes('.test.') ||
+           path.includes('.spec.') || path.includes('cypress') ||
+           path.includes('jest');
+  }
+  
+  private isConfigFile(filePath: string): boolean {
+    const path = filePath.toLowerCase();
+    const fileName = filePath.split('/').pop()?.toLowerCase() || '';
+    return path.includes('config') || path.includes('env') ||
+           fileName.startsWith('.env') || fileName.includes('config') ||
+           fileName === 'package.json' || fileName === 'tsconfig.json' ||
+           fileName.includes('webpack') || fileName.includes('babel') ||
+           fileName.includes('eslint') || fileName.includes('prettier');
+  }
+  
+  private isBugFixFile(file: GitChange): boolean {
+    const path = file.file.toLowerCase();
+    const hasSmallChanges = file.insertions + file.deletions < 50;
+    const hasBugKeywords = path.includes('fix') || path.includes('bug') || 
+                          path.includes('patch') || path.includes('hotfix');
+    
+    return hasSmallChanges && hasBugKeywords;
   }
 
   // Additional helper methods
@@ -636,5 +756,147 @@ export class CommitBoundaryAnalyzer {
     if (highRiskCount > 0) return 'high';
     if (mediumRiskCount > boundaries.length / 2) return 'medium';
     return 'low';
+  }
+
+  // AI-Enhanced Methods
+
+  private async performAIBoundaryAnalysis(changes: GitChange[]): Promise<{boundaries: CommitBoundary[]}> {
+    try {
+      // Prepare file information for AI analysis
+      const fileInfo = changes.map(change => ({
+        file: change.file,
+        type: change.type,
+        insertions: change.insertions,
+        deletions: change.deletions,
+        // Get a snippet of the changes if available
+        summary: `${change.type} change: +${change.insertions} -${change.deletions} lines`
+      }));
+
+      const prompt = `Analyze these code changes and suggest logical commit boundaries:
+
+Files changed:
+${fileInfo.map(f => `- ${f.file} (${f.summary})`).join('\n')}
+
+Please group these files into logical commit boundaries based on:
+1. Functional relationships (files that work together)
+2. Impact scope (UI changes, API changes, database changes, etc.)
+3. Dependencies between changes
+4. Best practices for atomic commits
+
+Each boundary should represent a single, focused change that can be committed independently.`;
+
+      const content = await this.aiClient.performCustomAnalysis(
+        prompt,
+        `You are a senior software engineer analyzing code changes for optimal commit organization. 
+
+Return a JSON object with this structure:
+{
+  "boundaries": [
+    {
+      "id": "boundary-1",
+      "files": ["file1.js", "file2.js"],
+      "theme": "brief description of what this group does",
+      "reasoning": "why these files should be grouped together",
+      "priority": "high|medium|low",
+      "estimatedComplexity": 1-5
+    }
+  ]
+}
+
+Create meaningful, logical groupings that follow commit best practices. Avoid having too many files in one boundary (max 6-8 files).`,
+        1000,
+        0.3
+      );
+
+      if (content) {
+        const parsed = JSON.parse(content);
+        const boundaries: CommitBoundary[] = parsed.boundaries.map((boundary: any, index: number) => {
+          const boundaryFiles = changes.filter(change => 
+            boundary.files.includes(change.file)
+          );
+
+          return {
+            id: boundary.id || `ai-boundary-${index + 1}`,
+            files: boundaryFiles,
+            reasoning: boundary.reasoning || 'AI-generated boundary based on semantic analysis',
+            priority: (boundary.priority as 'high' | 'medium' | 'low') || 'medium',
+            estimatedComplexity: boundary.estimatedComplexity || this.calculateComplexity(boundaryFiles),
+            dependencies: [] as string[],
+            theme: boundary.theme || 'code changes'
+          };
+        });
+
+        return { boundaries: boundaries.filter(b => b.files.length > 0) };
+      }
+    } catch (error) {
+      // Fall back to traditional analysis if AI fails
+      console.warn('AI boundary analysis failed, falling back to traditional method:', error);
+    }
+
+    // Fallback: return empty boundaries to trigger traditional analysis
+    return { boundaries: [] };
+  }
+
+  private async groupByImpactWithAI(changes: GitChange[]): Promise<Map<string, GitChange[]>> {
+    const groups = new Map<string, GitChange[]>();
+
+    for (const change of changes) {
+      // Use both traditional and AI-enhanced categorization
+      const traditionalTypes = this.categorizeImpactType(change, {});
+      const aiTypes = await this.aiCategorizeFile(change);
+      
+      // Combine and deduplicate categories
+      const combinedTypes = [...new Set([...traditionalTypes, ...aiTypes])];
+      
+      for (const impactType of combinedTypes) {
+        if (!groups.has(impactType)) {
+          groups.set(impactType, []);
+        }
+        groups.get(impactType)!.push(change);
+      }
+    }
+
+    return groups;
+  }
+
+  private async aiCategorizeFile(change: GitChange): Promise<string[]> {
+    try {
+      const prompt = `Categorize this code file for commit organization:
+
+File: ${change.file}
+Change type: ${change.type}
+Lines changed: +${change.insertions} -${change.deletions}
+
+Based on the file path and change information, what categories does this belong to?`;
+
+      const content = await this.aiClient.performCustomAnalysis(
+        prompt,
+        `You are a code analysis expert. Categorize this file into one or more of these categories:
+- api: API endpoints, routes, controllers
+- ui: User interface, components, views
+- business_logic: Core business logic, services, models
+- database: Database schemas, migrations, queries
+- tests: Test files
+- configuration: Config files, settings
+- documentation: Documentation, README files
+- build: Build scripts, CI/CD, deployment
+- utilities: Helper functions, utilities, libraries
+- security: Authentication, authorization, security
+- performance: Caching, optimization, monitoring
+
+Return JSON: {"categories": ["category1", "category2"]}`,
+        100,
+        0.1
+      );
+
+      if (content) {
+        const parsed = JSON.parse(content);
+        return parsed.categories || [];
+      }
+    } catch (error) {
+      // Fall back to traditional categorization
+    }
+
+    return [];
   }
 }

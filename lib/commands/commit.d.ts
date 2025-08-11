@@ -6,6 +6,7 @@ export default class Commit extends BaseCommand {
         interactive: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         template: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         learn: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'subcommand-context': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         config: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         verbose: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'no-cache': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
@@ -13,7 +14,9 @@ export default class Commit extends BaseCommand {
     };
     private renderer;
     private interactiveUI;
+    private isSubcommand;
     run(): Promise<void>;
+    private handleCommitRefinement;
     private refineCommitMessage;
     private applyCommit;
     private learnFromCommit;

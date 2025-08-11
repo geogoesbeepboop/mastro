@@ -406,6 +406,25 @@ export class SessionTracker {
     }
 
     await this.updateSessionState();
-    return this.currentSession.workingChanges.length > 0 || this.currentSession.stagedChanges.length > 0;
+    const hasStaged = this.currentSession.stagedChanges.length > 0;
+    const hasWorking = this.currentSession.workingChanges.length > 0;
+    const hasUnpushed = await this.hasUnpushedCommits();
+    
+    return hasStaged || hasWorking || hasUnpushed;
+  }
+
+  /**
+   * Check if there are commits ahead of the remote branch
+   * This helps detect committed but unpushed changes
+   */
+  async hasUnpushedCommits(): Promise<boolean> {
+    try {
+      // Get commits that exist locally but not on remote
+      const ahead = await this.git.log(['HEAD', '--not', '--remotes']);
+      return ahead.total > 0;
+    } catch (error) {
+      // If there's no remote or other git issues, assume no unpushed commits
+      return false;
+    }
   }
 }

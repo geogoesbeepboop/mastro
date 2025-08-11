@@ -7,8 +7,11 @@ export default class Split extends BaseCommand {
         'dry-run': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         format: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         interactive: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'interactive-review': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'min-boundary-size': import("@oclif/core/lib/interfaces/parser.js").OptionFlag<number, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         'max-boundary-size': import("@oclif/core/lib/interfaces/parser.js").OptionFlag<number, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
+        flow: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        commit: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         config: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         verbose: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'no-cache': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
@@ -16,6 +19,7 @@ export default class Split extends BaseCommand {
     private renderer;
     private interactiveUI;
     private boundaryAnalyzer;
+    private workflowManager;
     run(): Promise<void>;
     private outputTerminal;
     private outputJSON;
@@ -27,8 +31,34 @@ export default class Split extends BaseCommand {
     private handleSplitBoundary;
     private handleReorderCommits;
     private handleModifyMessages;
+    private validateFlags;
+    private handleFlowMode;
+    private handleCommitMode;
+    private stageFilesForBoundary;
+    private createCommitForBoundary;
+    private formatCommitMessage;
+    private displayFinalCommitSummary;
     private generateSimpleCommitMessage;
     private getChangeTypeIcon;
     private determineChangeType;
+    private handleInteractiveReviewMode;
+    private displayBoundaryOverview;
+    private reviewBoundaryInteractively;
+    private attemptBoundaryStaging;
+    private handleStagingFailure;
+    private modifyBoundaryInteractively;
+    private splitBoundaryFiles;
+    private removeProblematicFiles;
+    private editBoundaryCommitMessage;
+    private editBoundaryFiles;
+    private reorderBoundaryFiles;
+    private viewFileDetailedDiff;
+    private runBoundaryValidation;
+    private showDetailedBoundaryDiff;
+    private displayInteractiveReviewSummary;
+    private handleFailedBoundariesRecovery;
+    private saveFailedBoundariesForReview;
+    private attemptManualRecovery;
+    private showRecoveryRecommendations;
 }
 //# sourceMappingURL=split.d.ts.map

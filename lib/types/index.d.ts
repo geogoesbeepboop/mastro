@@ -121,6 +121,8 @@ export interface AIProvider {
     explainChanges(context: CommitContext): Promise<DiffExplanation>;
     createPRDescription(context: CommitContext): Promise<PRDescription>;
     reviewCode(context: CommitContext, persona: ReviewPersona): Promise<CodeReview>;
+    generateDocumentation(type: string, context: any, config: any): Promise<string>;
+    performCustomAnalysis(prompt: string, instructions: string, maxTokens?: number, temperature?: number): Promise<string | null>;
 }
 export interface CacheEntry<T> {
     key: string;
@@ -468,5 +470,61 @@ export interface DocumentationConfig {
     includeTodos: boolean;
     generateMermaid: boolean;
     autoUpdate: boolean;
+}
+export interface BoundaryMetrics {
+    boundaryId: string;
+    processingTime: number;
+    reviewScore?: number;
+    linesChanged: number;
+    filesModified: number;
+    complexity: 'low' | 'medium' | 'high';
+    commitHash?: string;
+}
+export interface WorkflowContext {
+    sessionId: string;
+    boundaries: any[];
+    currentBoundaryIndex: number;
+    reviewFindings: any[];
+    commitHashes: string[];
+    metrics: BoundaryMetrics[];
+    startTime: number;
+    settings: {
+        skipReview?: boolean;
+        skipDocs?: boolean;
+        skipPR?: boolean;
+        skipAnalytics?: boolean;
+        autoMode?: boolean;
+    };
+}
+export interface WorkflowCheckpoint {
+    contextId: string;
+    step: 'split' | 'review' | 'commit' | 'docs' | 'pr' | 'analytics';
+    timestamp: number;
+    data: any;
+}
+export interface FocusSession {
+    id: string;
+    startTime: number;
+    lastActivityTime: number;
+    totalFocusTime: number;
+    breakTime: number;
+    filesModified: number;
+    linesChanged: number;
+    productivity: {
+        score: number;
+        streak: number;
+        peakPeriod: string | null;
+    };
+    metrics: {
+        keystrokes: number;
+        activeMinutes: number;
+        idleMinutes: number;
+        flowState: boolean;
+    };
+    initialState: {
+        changedFiles: number;
+        insertions: number;
+        deletions: number;
+    };
 }
 //# sourceMappingURL=index.d.ts.map

@@ -75,12 +75,11 @@ export class ReviewFormatter {
     }
 
     // Blockers (critical)
-    if (review.blockers.length > 0) {
+    const renderedBlockers = review.blockers.map(b => this.formatBlockerTerminal(b)).filter(Boolean);
+    if (renderedBlockers.length > 0) {
       output.push(chalk.red.bold('🚫 Blockers (Must Fix)'));
       output.push(chalk.gray('─'.repeat(30)));
-      for (const blocker of review.blockers) {
-        output.push(this.formatBlockerTerminal(blocker));
-      }
+      output.push(...renderedBlockers);
       output.push('');
     }
 
@@ -188,11 +187,61 @@ export class ReviewFormatter {
     const ratingColors = { excellent: 'green', good: 'cyan', 'needs-work': 'yellow', 'major-issues': 'red' } as const;
     const ratingIcons = { excellent: '🌟', good: '👍', 'needs-work': '⚠️', 'major-issues': '❌' };
 
-    const color = ratingColors[rating as keyof typeof ratingColors] || 'gray';
-    const icon = ratingIcons[rating as keyof typeof ratingIcons] || '❓';
-    const confidenceBar = '█'.repeat(Math.round(confidence * 10));
+    // Normalize rating with type checking
+    const normalizedRating = this.normalizeRating(rating);
+    
+    const color = ratingColors[normalizedRating as keyof typeof ratingColors] || 'gray';
+    const icon = ratingIcons[normalizedRating as keyof typeof ratingIcons] || '❓';
+    
+    // Handle invalid confidence values
+    const validConfidence = (typeof confidence === 'number' && !isNaN(confidence) && confidence >= 0 && confidence <= 1);
+    
+    const displayRating = normalizedRating.toUpperCase();
+    
+    if (validConfidence) {
+      const confidenceBar = '█'.repeat(Math.round(confidence * 10));
+      return `${icon} ${chalk[color].bold(displayRating)} (${Math.round(confidence * 100)}% confidence: ${chalk.gray(confidenceBar)})`;
+    } else {
+      return `${icon} ${chalk[color].bold(displayRating)}`;
+    }
+  }
 
-    return `${icon} ${chalk[color].bold(rating.toUpperCase())} (${Math.round(confidence * 100)}% confidence: ${chalk.gray(confidenceBar)})`;
+  protected normalizeRating(rating: any): string {
+    // Type guard: ensure rating is a string
+    if (typeof rating !== 'string' || !rating) {
+      // AI-powered fallback: infer rating from common patterns
+      if (typeof rating === 'number') {
+        if (rating >= 4.5) return 'excellent';
+        if (rating >= 3.5) return 'good';
+        if (rating >= 2.0) return 'needs-work';
+        return 'major-issues';
+      }
+      
+      // Default fallback for unknown types
+      return 'needs-work';
+    }
+
+    // Normalize known rating strings
+    const lowerRating = rating.toLowerCase().trim();
+    
+    // Map common variations to standard ratings
+    const ratingMap: Record<string, string> = {
+      'excellent': 'excellent',
+      'great': 'excellent',
+      'outstanding': 'excellent',
+      'good': 'good',
+      'okay': 'good',
+      'fair': 'good',
+      'needs work': 'needs-work',
+      'needs-work': 'needs-work',
+      'poor': 'needs-work',
+      'major issues': 'major-issues',
+      'major-issues': 'major-issues',
+      'bad': 'major-issues',
+      'critical': 'major-issues'
+    };
+
+    return ratingMap[lowerRating] || 'needs-work';
   }
 
   private formatSuggestionTerminal(suggestion: ReviewSuggestion): string {
@@ -202,7 +251,8 @@ export class ReviewFormatter {
     const color = severityColors[suggestion.severity as keyof typeof severityColors] || 'gray';
     const icon = typeIcons[suggestion.type as keyof typeof typeIcons] || '💡';
 
-    let output = `${icon} ${chalk[color](suggestion.message)}`;
+    const message = suggestion.message || 'Suggestion detected';
+    let output = `${icon} ${chalk[color](message)}`;
     
     if (suggestion.file) {
       const fileDisplay = suggestion.line ? `${suggestion.file}:${suggestion.line}` : suggestion.file;
@@ -217,8 +267,13 @@ export class ReviewFormatter {
   }
 
   private formatBlockerTerminal(blocker: ReviewSuggestion): string {
+    // Suppress generic or low-signal blocker messages from rendering
+    if (!blocker.message || blocker.message === 'Issue detected' || (typeof blocker.message === 'string' && blocker.message.trim().length < 15)) {
+      return '';
+    }
+    const message = blocker.message;
     return [
-      `${chalk.red.bold('🚫')} ${chalk.red.bold(blocker.message)}`,
+      `${chalk.red.bold('🚫')} ${chalk.red.bold(message)}`,
       blocker.file ? `   ${chalk.gray(`${blocker.file}${blocker.line ? `:${blocker.line}` : ''}`)}` : '',
       blocker.suggestion ? `   ${chalk.cyan(`Fix: ${blocker.suggestion}`)}` : '',
       ''
@@ -232,7 +287,14 @@ export class ReviewFormatter {
     output.push('# 🔍 Code Review Results\n');
     output.push(`**Session:** ${review.sessionId.substring(0, 8)}`);
     output.push(`**Scope:** ${review.scope}`);
-    output.push(`**Rating:** ${review.overall.rating} (${Math.round(review.overall.confidence * 100)}% confidence)\n`);
+    
+    // Handle confidence display
+    const validConfidence = (typeof review.overall.confidence === 'number' && !isNaN(review.overall.confidence) && review.overall.confidence >= 0 && review.overall.confidence <= 1);
+    if (validConfidence) {
+      output.push(`**Rating:** ${review.overall.rating} (${Math.round(review.overall.confidence * 100)}% confidence)\n`);
+    } else {
+      output.push(`**Rating:** ${review.overall.rating}\n`);
+    }
     
     output.push(review.overall.summary + '\n');
 
@@ -244,7 +306,8 @@ export class ReviewFormatter {
     if (review.blockers.length > 0) {
       output.push('## 🚫 Blockers\n');
       for (const blocker of review.blockers) {
-        output.push(`### ❌ ${blocker.message}`);
+        const message = blocker.message || 'Issue detected';
+        output.push(`### ❌ ${message}`);
         if (blocker.file) output.push(`**File:** ${blocker.file}${blocker.line ? `:${blocker.line}` : ''}`);
         if (blocker.suggestion) output.push(`**Fix:** ${blocker.suggestion}`);
         output.push('');
@@ -254,7 +317,8 @@ export class ReviewFormatter {
     if (review.suggestions.length > 0) {
       output.push('## 💡 Code Suggestions\n');
       for (const suggestion of review.suggestions) {
-        output.push(`### ${this.getSuggestionIcon(suggestion.type)} ${suggestion.message}`);
+        const message = suggestion.message || 'Suggestion detected';
+        output.push(`### ${this.getSuggestionIcon(suggestion.type)} ${message}`);
         output.push(`**Severity:** ${suggestion.severity}`);
         if (suggestion.file) output.push(`**File:** ${suggestion.file}${suggestion.line ? `:${suggestion.line}` : ''}`);
         if (suggestion.suggestion) output.push(`**Suggestion:** ${suggestion.suggestion}`);

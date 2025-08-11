@@ -41,6 +41,11 @@ export class GitAnalyzer {
     return status.current || 'main';
   }
 
+  async getCurrentCommit(): Promise<string> {
+    const log = await this.git.log(['-1']);
+    return log.latest?.hash || '';
+  }
+
   async getStagedChanges(): Promise<GitChange[]> {
     const diff = await this.git.diff(['--staged', '--numstat']);
     if (!diff) return [];
@@ -417,5 +422,51 @@ export class GitAnalyzer {
       deletions,
       hunks
     };
+  }
+
+  /**
+   * Parse git diff output and return array of GitChange objects
+   */
+  parseDiffOutput(diffOutput: string): GitChange[] {
+    const changes: GitChange[] = [];
+    
+    if (!diffOutput.trim()) {
+      return changes;
+    }
+    
+    // Split diff output by file
+    const fileBlocks = diffOutput.split(/^diff --git/m).filter(block => block.trim());
+    
+    for (let block of fileBlocks) {
+      // Add back the diff header if it was stripped
+      if (!block.startsWith('diff --git')) {
+        block = 'diff --git' + block;
+      }
+      
+      // Extract file path from the diff header
+      const fileMatch = block.match(/^diff --git a\/(.+?) b\/(.+?)$/m);
+      if (!fileMatch) continue;
+      
+      const filePath = fileMatch[1];
+      
+      // Determine change type
+      let changeType: GitChange['type'] = 'modified';
+      if (block.includes('new file mode')) {
+        changeType = 'added';
+      } else if (block.includes('deleted file mode')) {
+        changeType = 'deleted';
+      }
+      
+      // Parse the file diff
+      try {
+        const change = this.parseDiffForFile(block, filePath, changeType);
+        changes.push(change);
+      } catch (error) {
+        // Skip files that can't be parsed
+        console.warn(`Could not parse diff for file ${filePath}:`, error);
+      }
+    }
+    
+    return changes;
   }
 }

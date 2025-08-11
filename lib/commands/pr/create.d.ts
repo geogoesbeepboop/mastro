@@ -35,11 +35,27 @@ export default class PRCreate extends BaseCommand {
     private outputTerminalPR;
     private outputMarkdownPR;
     private createActualPR;
+    private checkGitHubCLI;
+    private checkGitLabCLI;
+    private getCurrentBranchCompareURL;
+    private offerPRFallbackOptions;
     private getRemoteRepositoryInfo;
     private createGitHubPR;
     private createGitLabPR;
     private formatPRBodyForGitHub;
     private formatPRBodyForGitLab;
+    /**
+     * Get all relevant changes from working directory, staging area, and unpushed commits
+     */
+    private getAllRelevantChanges;
+    /**
+     * Calculate comprehensive statistics from all sources of changes
+     */
+    private calculateComprehensiveStats;
+    private getChangesFromUnpushedCommits;
+    private determineComplexity;
+    private calculateStatsFromUnpushedCommits;
+    private handleStagedChanges;
     private confirm;
 }
 //# sourceMappingURL=create.d.ts.map

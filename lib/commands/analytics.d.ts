@@ -8,6 +8,8 @@ export default class Analytics extends BaseCommand {
         'focus-mode': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         period: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         'update-current': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        'suppress-suggestions': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
+        quiet: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         config: import("@oclif/core/lib/interfaces/parser.js").OptionFlag<string, import("@oclif/core/lib/interfaces/parser.js").CustomOptions>;
         verbose: import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
         'no-cache': import("@oclif/core/lib/interfaces/parser.js").BooleanFlag<boolean>;
@@ -23,6 +25,15 @@ export default class Analytics extends BaseCommand {
     private outputMarkdown;
     private displayInsights;
     private enableFocusMode;
+    private initializeFocusSession;
+    private runFocusSessionMonitoring;
+    private updateFocusMetrics;
+    private displayFocusStatus;
+    private checkFlowState;
+    private completeFocusSession;
+    private calculateSessionQuality;
+    private saveFocusSessionData;
+    private sleep;
     private filterSessionsByPeriod;
     private calculateAverageQuality;
     private findCommonPatterns;

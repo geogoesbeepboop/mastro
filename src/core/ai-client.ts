@@ -376,35 +376,60 @@ Respond with JSON in this format:
   }
 
   private buildPRPrompt(context: CommitContext): string {
-    const changesStr = context.changes.map(change => 
-      `- ${change.file} (${change.type}, +${change.insertions} -${change.deletions})`
-    ).join('\n');
+    // Create detailed change descriptions with actual diff content for analysis
+    const detailedChanges = context.changes.map(change => {
+      const fileSummary = `File: ${change.file} (${change.type}, +${change.insertions} -${change.deletions})`;
+      
+      if (change.hunks.length === 0) {
+        return fileSummary;
+      }
+      
+      // Include actual code changes for semantic analysis
+      const significantHunks = change.hunks.slice(0, 3).map(hunk => {
+        const contextLines = hunk.lines.slice(0, 20).map(line => {
+          const prefix = line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' ';
+          return `${prefix} ${line.content}`;
+        }).join('\n');
+        
+        return `  ${hunk.header}\n${contextLines}${hunk.lines.length > 20 ? '\n  [...more lines]' : ''}`;
+      }).join('\n');
+      
+      return `${fileSummary}\n${significantHunks}${change.hunks.length > 3 ? '\n  [...additional hunks]' : ''}`;
+    }).join('\n\n');
 
-    return `Create a comprehensive PR description for these changes:
+    return `Create a comprehensive, contextually accurate PR description by analyzing the actual code changes below.
+
+IMPORTANT: Analyze the actual diff content to understand:
+- What functionality is being added, modified, or removed
+- The technical approach and implementation details
+- Potential impact on system behavior and architecture
+- Breaking changes or API modifications
+- Testing requirements based on the actual changes
 
 Repository: ${context.repository.name} (${context.repository.language})
 Branch: ${context.branch} → ${context.repository.patterns.commitStyle}
 Files changed: ${context.metadata.fileCount}
 Lines: +${context.metadata.totalInsertions} -${context.metadata.totalDeletions}
 
-Changes:
-${changesStr}
+ACTUAL CODE CHANGES FOR ANALYSIS:
+${detailedChanges}
 
-Create a PR description with:
-1. Clear title and description
-2. What was done and why
-3. Testing checklist
-4. Any breaking changes
-5. Dependencies or migration steps
+Based on your analysis of the actual diffs above, create a PR description that:
+1. Accurately describes what the code changes do (not just file names)
+2. Explains the technical approach and reasoning
+3. Identifies the business value or problem being solved
+4. Lists relevant testing scenarios based on the changes
+5. Highlights any breaking changes, API modifications, or migration needs
+6. Considers architectural or performance implications
 
 Respond with JSON in this format:
 {
-  "title": "PR title",
-  "description": "detailed description",
-  "checklist": ["testing", "items"],
-  "testingInstructions": ["how", "to", "test"],
-  "breakingChanges": ["breaking", "changes", "if", "any"],
-  "dependencies": ["dependencies", "if", "any"]
+  "title": "Clear, specific PR title reflecting the actual changes",
+  "description": "Detailed description based on diff analysis explaining what and why",
+  "checklist": ["specific testing items relevant to the changes"],
+  "testingInstructions": ["detailed test scenarios based on actual modifications"],
+  "breakingChanges": ["specific breaking changes found in diffs, if any"],
+  "dependencies": ["dependencies or prerequisites identified from changes"]
 }`;
   }
 

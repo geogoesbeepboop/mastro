@@ -175,6 +175,37 @@ export OPENAI_API_KEY=your_api_key_here
 mastro config:init
 ```
 
+### PR Creation Prerequisites
+
+For `mastro pr create` and `mastro flow` to work with pull request creation, you need:
+
+#### GitHub Setup (Required for GitHub repositories)
+```bash
+# Install GitHub CLI
+# macOS
+brew install gh
+
+# Windows
+winget install GitHub.CLI
+
+# Linux (Ubuntu/Debian)
+sudo apt install gh
+
+# Authenticate with GitHub
+gh auth login
+```
+
+#### GitLab Setup (Required for GitLab repositories) 
+```bash
+# Install GitLab CLI
+# See: https://glab.readthedocs.io/en/latest/intro.html
+
+# Authenticate with GitLab
+glab auth login
+```
+
+> **⚠️ Branch Requirements**: PR creation requires you to be on a feature branch, not on `main`/`master`. The commands will warn you and provide guidance if you're on the wrong branch.
+
 ## 🚦 Usage Examples
 
 ### Basic Commit Generation

@@ -91,7 +91,7 @@
         "description": "Explain code changes and diffs"
       },
       "pr": {
-        "description": "Create and review pull requests"
+        "description": "Create and review pull requests (requires GitHub CLI: `brew install gh && gh auth login`)"
       },
       "config": {
         "description": "Manage configuration settings"

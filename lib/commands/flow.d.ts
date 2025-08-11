@@ -62,5 +62,9 @@ export default class Flow extends BaseCommand {
     private generateTroubleshootingSuggestions;
     private analyzePossibleCauses;
     private generateRecoveryActions;
+    /**
+     * Validate that we're on an appropriate branch for workflow operations
+     */
+    private validateBranchState;
 }
 //# sourceMappingURL=flow.d.ts.map

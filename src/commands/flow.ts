@@ -15,7 +15,7 @@ import type {WorkflowContext, BoundaryMetrics, WorkflowCheckpoint} from '../type
 import type {StagingStrategy} from '../core/commit-boundary-analyzer.js';
 
 export default class Flow extends BaseCommand {
-  static override description = 'Orchestrate complete development workflow: Split → Review → Docs → Commit → PR → Analytics';
+  static override description = 'Orchestrate complete development workflow: Split → Review → Docs → Commit → PR → Analytics (PR creation requires GitHub CLI setup: see mastro pr --help)';
 
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -99,6 +99,9 @@ export default class Flow extends BaseCommand {
 
       // Ensure we're in a git repository
       await this.ensureGitRepository();
+
+      // Validate branch state for workflow operations
+      await this.validateBranchState(flags);
 
       console.log('\n' + this.renderer.renderTitle('🔄 Mastro Workflow Orchestrator'));
 
@@ -573,8 +576,10 @@ export default class Flow extends BaseCommand {
     this.startSpinner('Recording workflow analytics...');
     
     try {
-      await this.executeAnalyticsCommand(['--update-current']);
-      this.stopSpinner(true, 'Analytics recorded');
+      // Run analytics update in quiet mode and suppress suggestions/output
+      await this.executeAnalyticsCommand(['--update-current', '--quiet', '--suppress-suggestions']);
+      // Silent success; no extra terminal noise at the end of flow
+      this.stopSpinner(true);
       
     } catch (error) {
       this.stopSpinner(false, 'Analytics tracking failed');
@@ -664,10 +669,21 @@ export default class Flow extends BaseCommand {
     }
 
     console.log('\n🎉 Great work! Your development workflow is complete.');
-    console.log('Next steps:');
-    console.log('  • Push commits: git push');
-    console.log('  • View analytics: mastro analytics');
-    console.log('  • Start next workflow: mastro flow');
+    
+    // Only show relevant next steps based on what was actually done
+    const nextSteps = [];
+    
+    // If PR was not skipped, commits were already pushed, so don't suggest git push
+    if (context.settings.skipPR) {
+      nextSteps.push('Push commits: git push');
+    }
+    
+    nextSteps.push('Start next workflow: mastro flow');
+    
+    if (nextSteps.length > 0) {
+      console.log('Next steps:');
+      nextSteps.forEach(step => console.log(`  • ${step}`));
+    }
   }
 
   private getWorkflowSteps(flags: any): string[] {
@@ -1324,5 +1340,30 @@ export default class Flow extends BaseCommand {
     actions.push('Start fresh workflow analysis');
     
     return actions;
+  }
+
+  /**
+   * Validate that we're on an appropriate branch for workflow operations
+   */
+  private async validateBranchState(flags: any): Promise<void> {
+    const currentBranch = await this.gitAnalyzer.getCurrentBranch();
+    const mainBranches = ['main', 'master', 'develop', 'development'];
+    
+    // Skip PR creation if we're on a main branch
+    if (mainBranches.includes(currentBranch.toLowerCase()) && !flags['skip-pr']) {
+      this.log('⚠️  Branch Warning', 'warn');
+      this.log(`You're currently on branch '${currentBranch}', which appears to be a main branch.`);
+      this.log('PR creation will be skipped since PRs cannot be created from main branches.');
+      this.log('');
+      this.log('💡 To create PRs, work on a feature branch:');
+      this.log(`   git checkout -b feature/your-feature-name`);
+      this.log('   # make your changes');
+      this.log('   mastro flow');
+      this.log('');
+      
+      // Automatically skip PR creation to prevent later failures
+      flags['skip-pr'] = true;
+      this.log('Auto-enabled --skip-pr flag for this workflow.');
+    }
   }
 }

@@ -42,6 +42,17 @@ export default class Analytics extends BaseCommand {
     'update-current': Flags.boolean({
       description: 'update analytics for current active session',
       default: false
+    }),
+    'suppress-suggestions': Flags.boolean({
+      description: 'suppress "try running" suggestions for workflow context',
+      default: false,
+      hidden: true
+    }),
+    // Hidden flag to silence all command output when used from other commands (e.g., flow)
+    quiet: Flags.boolean({
+      description: 'suppress terminal output (for internal workflow usage)',
+      default: false,
+      hidden: true
     })
   };
 
@@ -69,7 +80,9 @@ export default class Analytics extends BaseCommand {
 
       // Update current session analytics if requested
       if (flags['update-current']) {
-        await this.updateCurrentSessionAnalytics();
+        await this.updateCurrentSessionAnalytics(!!flags.quiet);
+        // When run in quiet mode specifically to update analytics, return early
+        if (flags.quiet) return;
       }
 
       this.startSpinner('Loading session analytics...');
@@ -98,15 +111,16 @@ export default class Analytics extends BaseCommand {
     }
   }
 
-  private async updateCurrentSessionAnalytics(): Promise<void> {
-    this.startSpinner('Updating current session analytics...');
+  private async updateCurrentSessionAnalytics(quiet = false): Promise<void> {
+    if (!quiet) this.startSpinner('Updating current session analytics...');
     
     try {
       const currentSession = await this.sessionTracker.getCurrentSession();
-      await this.analyticsEngine.updateSession(currentSession);
-      this.stopSpinner(true, 'Current session analytics updated');
+      // Persist analytics snapshot at this point so downstream history is meaningful
+      await this.analyticsEngine.completeSession(currentSession);
+      if (!quiet) this.stopSpinner(true, 'Current session analytics updated');
     } catch (error) {
-      this.stopSpinner(false, 'Failed to update session analytics');
+      if (!quiet) this.stopSpinner(false, 'Failed to update session analytics');
       throw error;
     }
   }
@@ -114,9 +128,13 @@ export default class Analytics extends BaseCommand {
   private async outputTerminal(history: SessionHistory, flags: any): Promise<void> {
     if (history.totalSessions === 0) {
       console.log('\n' + this.renderer.renderWarning('No session data available yet. Start coding with mastro to build your analytics!'));
-      console.log('\nTry running:');
-      console.log('  mastro review    # Start a session-based code review');
-      console.log('  mastro split     # Analyze working changes');
+      
+      // Only show suggestions if not called from workflow context
+      if (!flags['suppress-suggestions']) {
+        console.log('\nTry running:');
+        console.log('  mastro review    # Start a session-based code review');
+        console.log('  mastro split     # Analyze working changes');
+      }
       return;
     }
 

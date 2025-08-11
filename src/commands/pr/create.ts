@@ -12,11 +12,14 @@ import type {
   MigrationDetection,
   SmartPRContext,
   DevelopmentSession,
-  ReviewPersona
+  ReviewPersona,
+  GitChange,
+  GitHunk,
+  GitLine
 } from '../../types/index.js';
 
 export default class PRCreate extends BaseCommand {
-  static override description = 'Create intelligent pull requests with AI-generated descriptions and templates';
+  static override description = 'Create intelligent pull requests with AI-generated descriptions and templates. Prerequisites: GitHub CLI (`brew install gh && gh auth login`) or GitLab CLI (`glab auth login`). Must be on a feature branch, not main/master.';
 
   static override examples = [
     '<%= config.bin %> pr create',
@@ -323,22 +326,17 @@ export default class PRCreate extends BaseCommand {
   }
 
   private async generatePRContext(session: DevelopmentSession, flags: any, migrationInfo?: MigrationDetection): Promise<SmartPRContext> {
-    // Determine PR template based on changes
+    // Get all relevant changes and calculate comprehensive stats
+    const allChanges = await this.getAllRelevantChanges(session);
+    const effectiveStats = await this.calculateComprehensiveStats(session, allChanges);
+    
+    // Determine PR template based on actual changes analysis
     let templateType = flags.template;
     if (templateType === 'auto') {
-      templateType = await this.workflowAnalyzer.detectPRType(session);
+      templateType = await this.workflowAnalyzer.detectPRType(session, allChanges);
     }
 
     const template = this.createPRTemplate(templateType, session);
-    
-    // Get all relevant changes (staged, working, or from unpushed commits)
-    const allChanges = [...session.workingChanges, ...session.stagedChanges];
-    let effectiveStats = session.cumulativeStats;
-    
-    // If no working/staged changes but we have unpushed commits, calculate stats from commits
-    if (allChanges.length === 0 && await this.sessionTracker.hasUnpushedCommits()) {
-      effectiveStats = await this.calculateStatsFromUnpushedCommits();
-    }
     
     // Analyze review complexity using effective stats
     let reviewComplexity: SmartPRContext['reviewComplexity'];
@@ -938,6 +936,121 @@ export default class PRCreate extends BaseCommand {
     return this.formatPRBodyForGitHub(prDescription, context);
   }
 
+  /**
+   * Get all relevant changes from working directory, staging area, and unpushed commits
+   */
+  private async getAllRelevantChanges(session: DevelopmentSession): Promise<GitChange[]> {
+    const allChanges: GitChange[] = [];
+    
+    // Add working directory changes
+    allChanges.push(...session.workingChanges);
+    
+    // Add staged changes (if not already included)
+    for (const stagedChange of session.stagedChanges) {
+      const existingIndex = allChanges.findIndex(c => c.file === stagedChange.file);
+      if (existingIndex >= 0) {
+        // Merge stats for files that appear in both working and staged
+        allChanges[existingIndex].insertions += stagedChange.insertions;
+        allChanges[existingIndex].deletions += stagedChange.deletions;
+        allChanges[existingIndex].hunks.push(...stagedChange.hunks);
+      } else {
+        allChanges.push(stagedChange);
+      }
+    }
+    
+    // If no working/staged changes, get changes from unpushed commits
+    if (allChanges.length === 0 && await this.sessionTracker.hasUnpushedCommits()) {
+      try {
+        const unpushedChanges = await this.getChangesFromUnpushedCommits();
+        allChanges.push(...unpushedChanges);
+      } catch (error) {
+        // If we can't get unpushed commit changes, continue with empty array
+        console.warn('Could not retrieve unpushed commit changes:', error);
+      }
+    }
+    
+    return allChanges;
+  }
+  
+  /**
+   * Calculate comprehensive statistics from all sources of changes
+   */
+  private async calculateComprehensiveStats(session: DevelopmentSession, allChanges: GitChange[]): Promise<{
+    totalFiles: number;
+    totalInsertions: number;
+    totalDeletions: number;
+    changedLines: number;
+    complexity: 'low' | 'medium' | 'high' | 'critical';
+    duration: number;
+  }> {
+    // If we have local changes, use them
+    if (allChanges.length > 0) {
+      const uniqueFiles = new Set(allChanges.map(c => c.file));
+      const totalInsertions = allChanges.reduce((sum, c) => sum + c.insertions, 0);
+      const totalDeletions = allChanges.reduce((sum, c) => sum + c.deletions, 0);
+      const changedLines = totalInsertions + totalDeletions;
+      
+      return {
+        totalFiles: uniqueFiles.size,
+        totalInsertions,
+        totalDeletions,
+        changedLines,
+        complexity: this.determineComplexity(uniqueFiles.size, changedLines, allChanges),
+        duration: session.cumulativeStats.duration
+      };
+    }
+    
+    // Fall back to unpushed commits stats if no local changes
+    return await this.calculateStatsFromUnpushedCommits();
+  }
+  
+  private async getChangesFromUnpushedCommits(): Promise<GitChange[]> {
+    try {
+      const git = (this.gitAnalyzer as any).git;
+      
+      // Get the diff for all unpushed commits
+      const diffOutput = await git.diff(['origin/HEAD...HEAD']);
+      
+      if (!diffOutput) {
+        return [];
+      }
+      
+      // Parse the diff output into GitChange objects
+      return this.gitAnalyzer.parseDiffOutput(diffOutput);
+      
+    } catch (error) {
+      throw new Error(`Failed to get changes from unpushed commits: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  private determineComplexity(fileCount: number, lineCount: number, changes: GitChange[]): 'low' | 'medium' | 'high' | 'critical' {
+    const criticalFiles = changes.filter(c => 
+      c.file.includes('package.json') || 
+      c.file.includes('Dockerfile') ||
+      c.file.includes('.env') ||
+      c.file.includes('migrations/')
+    ).length;
+
+    const hasBreakingChanges = changes.some(c => 
+      c.hunks.some((h: GitHunk) => 
+        h.lines.some((l: GitLine) => 
+          l.type === 'removed' && 
+          (l.content.includes('export') || l.content.includes('function') || l.content.includes('class'))
+        )
+      )
+    );
+
+    if (criticalFiles > 0 || hasBreakingChanges || lineCount > 1000 || fileCount > 20) {
+      return 'critical';
+    } else if (lineCount > 500 || fileCount > 10) {
+      return 'high';
+    } else if (lineCount > 100 || fileCount > 5) {
+      return 'medium';
+    } else {
+      return 'low';
+    }
+  }
+
   private async calculateStatsFromUnpushedCommits(): Promise<{
     totalFiles: number;
     totalInsertions: number;
@@ -966,16 +1079,8 @@ export default class PRCreate extends BaseCommand {
       const diffStats = await git.diffSummary(['origin/HEAD...HEAD']);
       
       // Calculate complexity based on changes
-      let complexity: 'low' | 'medium' | 'high' | 'critical' = 'low';
       const totalLines = diffStats.insertions + diffStats.deletions;
-      
-      if (totalLines > 1000 || diffStats.files.length > 20) {
-        complexity = 'critical';
-      } else if (totalLines > 500 || diffStats.files.length > 10) {
-        complexity = 'high';
-      } else if (totalLines > 100 || diffStats.files.length > 5) {
-        complexity = 'medium';
-      }
+      const complexity = this.determineComplexity(diffStats.files.length, totalLines, []);
       
       return {
         totalFiles: diffStats.files.length,

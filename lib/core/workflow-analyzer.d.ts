@@ -1,4 +1,4 @@
-import type { DevelopmentSession, SessionPattern, WorkflowSuggestion, MastroConfig, PRTemplate } from '../types/index.js';
+import type { DevelopmentSession, SessionPattern, WorkflowSuggestion, GitChange, MastroConfig, PRTemplate } from '../types/index.js';
 export interface WorkflowMetrics {
     sessionDuration: number;
     commitFrequency: number;
@@ -27,7 +27,7 @@ export declare class WorkflowAnalyzer {
     private config;
     constructor(config: MastroConfig);
     analyzeWorkflowPatterns(session: DevelopmentSession): Promise<SessionPattern[]>;
-    detectPRType(session: DevelopmentSession): Promise<PRTemplate['type']>;
+    detectPRType(session: DevelopmentSession, providedChanges?: GitChange[]): Promise<PRTemplate['type']>;
     generateWorkflowSuggestions(session: DevelopmentSession): Promise<WorkflowSuggestion[]>;
     analyzeTeamWorkflow(recentSessions: DevelopmentSession[]): Promise<TeamWorkflowInsights>;
     optimizeCommitStrategy(session: DevelopmentSession): Promise<string[]>;

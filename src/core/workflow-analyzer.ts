@@ -77,8 +77,8 @@ export class WorkflowAnalyzer {
     return patterns;
   }
 
-  async detectPRType(session: DevelopmentSession): Promise<PRTemplate['type']> {
-    const allChanges = [...session.workingChanges, ...session.stagedChanges];
+  async detectPRType(session: DevelopmentSession, providedChanges?: GitChange[]): Promise<PRTemplate['type']> {
+    const allChanges = providedChanges || [...session.workingChanges, ...session.stagedChanges];
     const branch = session.baseBranch.toLowerCase();
     
     // Branch name analysis

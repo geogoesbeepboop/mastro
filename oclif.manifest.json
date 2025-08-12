@@ -86,6 +86,20 @@
           "name": "update-current",
           "allowNo": false,
           "type": "boolean"
+        },
+        "suppress-suggestions": {
+          "description": "suppress \"try running\" suggestions for workflow context",
+          "hidden": true,
+          "name": "suppress-suggestions",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "quiet": {
+          "description": "suppress terminal output (for internal workflow usage)",
+          "hidden": true,
+          "name": "quiet",
+          "allowNo": false,
+          "type": "boolean"
         }
       },
       "hasDynamicHelp": false,
@@ -171,6 +185,13 @@
           "name": "learn",
           "allowNo": false,
           "type": "boolean"
+        },
+        "subcommand-context": {
+          "description": "internal flag indicating command is running as subcommand",
+          "hidden": true,
+          "name": "subcommand-context",
+          "allowNo": false,
+          "type": "boolean"
         }
       },
       "hasDynamicHelp": false,
@@ -186,6 +207,92 @@
         "lib",
         "commands",
         "commit.js"
+      ]
+    },
+    "config": {
+      "aliases": [],
+      "args": {
+        "action": {
+          "default": "interactive",
+          "description": "configuration action",
+          "name": "action",
+          "options": [
+            "interactive",
+            "init"
+          ],
+          "required": false
+        }
+      },
+      "description": "Manage mastro configuration (defaults to interactive mode)",
+      "examples": [
+        "<%= config.bin %> <%= command.id %>",
+        "<%= config.bin %> <%= command.id %> --init",
+        "<%= config.bin %> <%= command.id %> --global"
+      ],
+      "flags": {
+        "config": {
+          "char": "c",
+          "description": "path to config file",
+          "env": "MASTRO_CONFIG",
+          "name": "config",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "verbose": {
+          "char": "v",
+          "description": "enable verbose logging",
+          "name": "verbose",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "no-cache": {
+          "description": "disable caching",
+          "name": "no-cache",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "preview without making changes",
+          "name": "dry-run",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "global": {
+          "char": "g",
+          "description": "configure global settings",
+          "name": "global",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "init": {
+          "char": "i",
+          "description": "initialize configuration instead of interactive mode",
+          "name": "init",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "force": {
+          "char": "f",
+          "description": "force overwrite existing configuration (for init)",
+          "name": "force",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config",
+      "pluginAlias": "mastro-ai",
+      "pluginName": "mastro-ai",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "lib",
+        "commands",
+        "config.js"
       ]
     },
     "explain": {
@@ -297,7 +404,7 @@
     "flow": {
       "aliases": [],
       "args": {},
-      "description": "Orchestrate complete development workflow: Split → Review → Commit → Docs → PR → Analytics",
+      "description": "Orchestrate complete development workflow: Split → Review → Docs → Commit → PR → Analytics (PR creation requires GitHub CLI setup: see mastro pr --help)",
       "examples": [
         "<%= config.bin %> <%= command.id %>",
         "<%= config.bin %> <%= command.id %> --auto",
@@ -549,6 +656,58 @@
         "lib",
         "commands",
         "hooks.js"
+      ]
+    },
+    "info": {
+      "aliases": [],
+      "args": {},
+      "description": "Display mastro information, ASCII art, and tool metadata",
+      "examples": [
+        "<%= config.bin %> <%= command.id %>"
+      ],
+      "flags": {
+        "config": {
+          "char": "c",
+          "description": "path to config file",
+          "env": "MASTRO_CONFIG",
+          "name": "config",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "verbose": {
+          "char": "v",
+          "description": "enable verbose logging",
+          "name": "verbose",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "no-cache": {
+          "description": "disable caching",
+          "name": "no-cache",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "preview without making changes",
+          "name": "dry-run",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "info",
+      "pluginAlias": "mastro-ai",
+      "pluginName": "mastro-ai",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "lib",
+        "commands",
+        "info.js"
       ]
     },
     "review": {
@@ -887,6 +1046,67 @@
         "init.js"
       ]
     },
+    "config:interactive": {
+      "aliases": [],
+      "args": {},
+      "description": "Interactive configuration wizard for mastro",
+      "examples": [
+        "<%= config.bin %> <%= command.id %>",
+        "<%= config.bin %> <%= command.id %> --global"
+      ],
+      "flags": {
+        "config": {
+          "char": "c",
+          "description": "path to config file",
+          "env": "MASTRO_CONFIG",
+          "name": "config",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "verbose": {
+          "char": "v",
+          "description": "enable verbose logging",
+          "name": "verbose",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "no-cache": {
+          "description": "disable caching",
+          "name": "no-cache",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "preview without making changes",
+          "name": "dry-run",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "global": {
+          "char": "g",
+          "description": "configure global settings",
+          "name": "global",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "config:interactive",
+      "pluginAlias": "mastro-ai",
+      "pluginName": "mastro-ai",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "lib",
+        "commands",
+        "config",
+        "interactive.js"
+      ]
+    },
     "docs:api": {
       "aliases": [],
       "args": {},
@@ -1143,6 +1363,107 @@
         "architecture.js"
       ]
     },
+    "docs:auto-update": {
+      "aliases": [],
+      "args": {},
+      "description": "Automatically update documentation based on code changes",
+      "examples": [
+        "<%= config.bin %> <%= command.id %>",
+        "<%= config.bin %> <%= command.id %> --preview",
+        "<%= config.bin %> <%= command.id %> --doc-types api,architecture --threshold 0.8"
+      ],
+      "flags": {
+        "config": {
+          "char": "c",
+          "description": "path to config file",
+          "env": "MASTRO_CONFIG",
+          "name": "config",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "verbose": {
+          "char": "v",
+          "description": "enable verbose logging",
+          "name": "verbose",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "no-cache": {
+          "description": "disable caching",
+          "name": "no-cache",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "dry-run": {
+          "description": "preview without making changes",
+          "name": "dry-run",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "preview": {
+          "char": "p",
+          "description": "preview what would be updated without making changes",
+          "name": "preview",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "doc-types": {
+          "char": "t",
+          "description": "comma-separated list of documentation types to update",
+          "name": "doc-types",
+          "default": "api,architecture,user-guide,readme",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "threshold": {
+          "description": "minimum confidence threshold for triggering updates (0.0-1.0)",
+          "name": "threshold",
+          "default": "0.7",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "output-dir": {
+          "char": "o",
+          "description": "output directory for documentation files",
+          "name": "output-dir",
+          "default": "./docs",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "auto-commit": {
+          "description": "automatically commit documentation updates",
+          "name": "auto-commit",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "force": {
+          "char": "f",
+          "description": "force update even if confidence is below threshold",
+          "name": "force",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "docs:auto-update",
+      "pluginAlias": "mastro-ai",
+      "pluginName": "mastro-ai",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": true,
+      "relativePath": [
+        "lib",
+        "commands",
+        "docs",
+        "auto-update.js"
+      ]
+    },
     "docs:generate": {
       "aliases": [],
       "args": {},
@@ -1368,7 +1689,7 @@
     "pr:create": {
       "aliases": [],
       "args": {},
-      "description": "Create intelligent pull requests with AI-generated descriptions and templates",
+      "description": "Create intelligent pull requests with AI-generated descriptions and templates. Prerequisites: GitHub CLI (`brew install gh && gh auth login`) or GitLab CLI (`glab auth login`). Must be on a feature branch, not main/master.",
       "examples": [
         "<%= config.bin %> pr create",
         "<%= config.bin %> pr create --template=feature",
@@ -1482,7 +1803,8 @@
         },
         "push": {
           "char": "p",
-          "description": "push branch before creating PR",
+          "description": "legacy flag - push is now always performed before PR creation",
+          "hidden": true,
           "name": "push",
           "allowNo": false,
           "type": "boolean"

@@ -261,7 +261,7 @@ export class InteractiveUI {
     });
   }
 
-  async selectFromList<T>(items: T[], displayFn: (item: T) => string, message = 'Select an option'): Promise<T | null> {
+  async selectFromList<T>(items: T[], displayFn: (item: T) => string, message = 'Select an option', defaultValue?: T): Promise<T | null> {
     if (!this.config.ui.interactive || items.length === 0) {
       return items[0] || null;
     }
@@ -274,14 +274,28 @@ export class InteractiveUI {
 
       console.log(chalk.cyan(`\n${message}:`));
       items.forEach((item, index) => {
-        console.log(`  ${index + 1}. ${displayFn(item)}`);
+        const current = defaultValue && item === defaultValue ? ' (current)' : '';
+        console.log(`  ${index + 1}. ${displayFn(item)}${current}`);
       });
       console.log('  0. Cancel');
 
-      this.readline.question(`\nSelect (0-${items.length}): `, (answer: string) => {
+      const defaultIndex = defaultValue ? items.indexOf(defaultValue) + 1 : 0;
+      const promptText = defaultIndex > 0 ? 
+        `\nSelect (0-${items.length}) [${defaultIndex}]: ` : 
+        `\nSelect (0-${items.length}): `;
+
+      this.readline.question(promptText, (answer: string) => {
         this.readline.close();
         
-        const choice = parseInt(answer.trim(), 10);
+        const response = answer.trim();
+        let choice: number;
+        
+        if (response === '' && defaultIndex > 0) {
+          choice = defaultIndex;
+        } else {
+          choice = parseInt(response, 10);
+        }
+        
         if (choice === 0) {
           resolve(null);
         } else if (choice > 0 && choice <= items.length) {
@@ -294,31 +308,72 @@ export class InteractiveUI {
     });
   }
 
-  async getTextInput(prompt: string, defaultValue?: string): Promise<string | null> {
+  async getTextInput(prompt: string, defaultValue?: string, hidden = false): Promise<string | null> {
     if (!this.config.ui.interactive) {
       return defaultValue || null;
     }
 
     return new Promise((resolve) => {
-      this.readline = createInterface({
-        input: process.stdin,
-        output: process.stdout
-      });
-
-      const fullPrompt = defaultValue ? `${prompt} (${defaultValue}): ` : `${prompt}: `;
-      
-      this.readline.question(fullPrompt, (answer: string) => {
-        this.readline.close();
+      if (hidden && process.stdin.isTTY) {
+        // For hidden input, use stdin directly without readline
+        process.stdout.write(`${prompt}: `);
+        process.stdin.setRawMode?.(true);
+        process.stdin.resume();
         
-        const response = answer.trim();
-        if (response === '' && defaultValue) {
-          resolve(defaultValue);
-        } else if (response === '') {
-          resolve(null);
-        } else {
-          resolve(response);
-        }
-      });
+        let input = '';
+        const onData = (key: Buffer) => {
+          const char = key.toString();
+          
+          if (char === '\n' || char === '\r') {
+            // Enter pressed
+            process.stdin.setRawMode?.(false);
+            process.stdin.pause();
+            process.stdin.off('data', onData);
+            process.stdout.write('\n');
+            resolve(input || defaultValue || null);
+          } else if (char === '\u0003') {
+            // Ctrl+C pressed
+            process.stdin.setRawMode?.(false);
+            process.stdin.pause();
+            process.stdin.off('data', onData);
+            process.stdout.write('\n');
+            resolve(null);
+          } else if (char === '\u007f') {
+            // Backspace pressed
+            if (input.length > 0) {
+              input = input.slice(0, -1);
+              process.stdout.write('\b \b');
+            }
+          } else if (char >= ' ' && char <= '~') {
+            // Printable character
+            input += char;
+            process.stdout.write('*');
+          }
+        };
+        
+        process.stdin.on('data', onData);
+      } else {
+        // Regular input
+        this.readline = createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+
+        const fullPrompt = defaultValue ? `${prompt} (${defaultValue}): ` : `${prompt}: `;
+        
+        this.readline.question(fullPrompt, (answer: string) => {
+          this.readline.close();
+          
+          const response = answer.trim();
+          if (response === '' && defaultValue) {
+            resolve(defaultValue);
+          } else if (response === '') {
+            resolve(null);
+          } else {
+            resolve(response);
+          }
+        });
+      }
     });
   }
 

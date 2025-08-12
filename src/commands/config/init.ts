@@ -47,11 +47,28 @@ export default class ConfigInit extends BaseCommand {
 
       this.log(`Creating ${flags.global ? 'global' : 'local'} configuration...`, 'info');
 
-      // Get API key
-      let apiKey = process.env['OPENAI_API_KEY'];
+      // Get AI provider preference
+      const providers = ['openai', 'anthropic'];
+      let selectedProvider = 'openai';
+      
+      if (this.mastroConfig.ui.interactive) {
+        const providerChoice = await interactiveUI.selectFromList(
+          providers,
+          provider => provider === 'openai' ? 'OpenAI (ChatGPT)' : 'Anthropic (Claude)',
+          'Select AI provider'
+        );
+        
+        if (providerChoice) {
+          selectedProvider = providerChoice;
+        }
+      }
+
+      // Get API key based on provider
+      let apiKey = selectedProvider === 'anthropic' ? process.env['ANTHROPIC_API_KEY'] : process.env['OPENAI_API_KEY'];
       if (!apiKey && this.mastroConfig.ui.interactive) {
+        const keyName = selectedProvider === 'anthropic' ? 'Anthropic' : 'OpenAI';
         const inputResult = await interactiveUI.getTextInput(
-          'Enter your OpenAI API key (or press Enter to skip)',
+          `Enter your ${keyName} API key (or press Enter to skip)`,
           undefined
         );
         if (inputResult) {
@@ -59,9 +76,11 @@ export default class ConfigInit extends BaseCommand {
         }
       }
 
-      // Get model preference
-      const models = ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'];
-      let selectedModel = 'gpt-4o-mini';
+      // Get model preference based on provider
+      const models = selectedProvider === 'anthropic' 
+        ? ['claude-sonnet-4-0']
+        : ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-5-mini'];
+      let selectedModel = selectedProvider === 'anthropic' ? 'claude-sonnet-4-0' : 'gpt-4o-mini';
       
       if (this.mastroConfig.ui.interactive) {
         const modelChoice = await interactiveUI.selectFromList(
@@ -94,7 +113,7 @@ export default class ConfigInit extends BaseCommand {
       // Create configuration
       const config = {
         ai: {
-          provider: 'openai' as const,
+          provider: selectedProvider as 'openai' | 'anthropic',
           apiKey,
           model: selectedModel,
           maxTokens: 1000,
@@ -137,7 +156,8 @@ export default class ConfigInit extends BaseCommand {
       this.success(`Configuration created at ${this.configManager.getConfigPath(flags.global)}`);
       
       if (!apiKey) {
-        this.log('⚠️  No API key configured. Set OPENAI_API_KEY environment variable or update the config file.', 'warn');
+        const envVar = selectedProvider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';
+        this.log(`⚠️  No API key configured. Set ${envVar} environment variable or update the config file.`, 'warn');
       }
 
       interactiveUI.cleanup();

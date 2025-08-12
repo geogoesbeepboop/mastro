@@ -25,5 +25,8 @@ export declare class FileSystemManager {
     createTemplateFiles(): Promise<void>;
     getOutputDirectory(): string;
     setOutputDirectory(directory: string): void;
+    documentExists(docType: string): Promise<boolean>;
+    readExistingDocument(docType: string): Promise<string | null>;
+    private getDocumentPath;
 }
 //# sourceMappingURL=file-manager.d.ts.map

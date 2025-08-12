@@ -10,8 +10,8 @@ export declare class InteractiveUI {
     constructor(config: MastroConfig);
     promptForRefinement(options: RefinementOptions): Promise<string | null>;
     confirmAction(message: string, defaultYes?: boolean): Promise<boolean>;
-    selectFromList<T>(items: T[], displayFn: (item: T) => string, message?: string): Promise<T | null>;
-    getTextInput(prompt: string, defaultValue?: string): Promise<string | null>;
+    selectFromList<T>(items: T[], displayFn: (item: T) => string, message?: string, defaultValue?: T): Promise<T | null>;
+    getTextInput(prompt: string, defaultValue?: string, hidden?: boolean): Promise<string | null>;
     showProgressiveEnhancement(initialMessage: CommitMessage, enhancedMessage: CommitMessage, onSelect: (message: CommitMessage) => void): Promise<void>;
     cleanup(): void;
     private cleanupRawMode;

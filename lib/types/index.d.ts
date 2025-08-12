@@ -115,7 +115,8 @@ export interface ReviewSuggestion {
     confidence: number;
 }
 export interface AIProvider {
-    name: string;
+    readonly name: string;
+    readonly capabilities: AICapabilities;
     generateCommitMessage(context: CommitContext): Promise<CommitMessage>;
     refineCommitMessage(originalMessage: CommitMessage, refinementInstruction: string, context: CommitContext): Promise<CommitMessage>;
     explainChanges(context: CommitContext): Promise<DiffExplanation>;
@@ -123,6 +124,123 @@ export interface AIProvider {
     reviewCode(context: CommitContext, persona: ReviewPersona): Promise<CodeReview>;
     generateDocumentation(type: string, context: any, config: any): Promise<string>;
     performCustomAnalysis(prompt: string, instructions: string, maxTokens?: number, temperature?: number): Promise<string | null>;
+    analyzeCodeQuality?(context: CommitContext): Promise<CodeQualityAnalysis>;
+    suggestRefactoring?(context: CommitContext): Promise<RefactoringSuggestion[]>;
+    detectSecurityIssues?(context: CommitContext): Promise<SecurityAnalysis>;
+    generateTests?(context: CommitContext): Promise<TestSuggestion[]>;
+    estimateComplexity?(context: CommitContext): Promise<ComplexityAnalysis>;
+}
+export interface AICapabilities {
+    maxTokens: number;
+    supportsStreaming: boolean;
+    supportsJsonMode: boolean;
+    supportsToolUse: boolean;
+    supportsFunctionCalling: boolean;
+    supportsVision: boolean;
+    supportsCaching: boolean;
+    contextWindow: number;
+    models: string[];
+    features: AIFeature[];
+}
+export type AIFeature = 'code-analysis' | 'documentation-generation' | 'test-generation' | 'security-analysis' | 'performance-analysis' | 'refactoring-suggestions' | 'architectural-insights' | 'best-practices' | 'code-review' | 'commit-messages' | 'pr-descriptions';
+export interface CodeQualityAnalysis {
+    overallScore: number;
+    metrics: {
+        maintainability: number;
+        readability: number;
+        testability: number;
+        performance: number;
+        security: number;
+    };
+    issues: QualityIssue[];
+    suggestions: string[];
+    positiveAspects: string[];
+}
+export interface QualityIssue {
+    type: 'error' | 'warning' | 'suggestion';
+    category: 'maintainability' | 'performance' | 'security' | 'readability' | 'testing';
+    file: string;
+    line?: number;
+    message: string;
+    suggestion: string;
+    confidence: number;
+}
+export interface RefactoringSuggestion {
+    type: 'extract-method' | 'extract-class' | 'rename' | 'move' | 'simplify' | 'optimize';
+    file: string;
+    startLine: number;
+    endLine: number;
+    description: string;
+    reasoning: string;
+    estimatedEffort: 'low' | 'medium' | 'high';
+    benefits: string[];
+    risks: string[];
+    example?: string;
+}
+export interface SecurityAnalysis {
+    overallRisk: 'low' | 'medium' | 'high' | 'critical';
+    vulnerabilities: SecurityVulnerability[];
+    recommendations: SecurityRecommendation[];
+    compliance: ComplianceCheck[];
+}
+export interface SecurityVulnerability {
+    id: string;
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    file: string;
+    line?: number;
+    description: string;
+    impact: string;
+    mitigation: string;
+    cwe?: string;
+    cvss?: number;
+}
+export interface SecurityRecommendation {
+    category: 'authentication' | 'authorization' | 'encryption' | 'input-validation' | 'logging' | 'configuration';
+    priority: 'low' | 'medium' | 'high';
+    description: string;
+    implementation: string;
+    resources: string[];
+}
+export interface ComplianceCheck {
+    standard: 'OWASP' | 'SOC2' | 'GDPR' | 'HIPAA' | 'PCI-DSS';
+    status: 'compliant' | 'non-compliant' | 'partially-compliant' | 'unknown';
+    details: string;
+    requirements: string[];
+}
+export interface TestSuggestion {
+    type: 'unit' | 'integration' | 'e2e' | 'performance' | 'security';
+    file: string;
+    testFile: string;
+    description: string;
+    testCode: string;
+    coverage: {
+        lines: number[];
+        functions: string[];
+        branches: string[];
+    };
+    priority: 'low' | 'medium' | 'high';
+    reasoning: string;
+}
+export interface ComplexityAnalysis {
+    overallComplexity: 'low' | 'medium' | 'high' | 'very-high';
+    metrics: {
+        cyclomaticComplexity: number;
+        cognitiveComplexity: number;
+        nestingDepth: number;
+        linesOfCode: number;
+        maintainabilityIndex: number;
+    };
+    hotspots: ComplexityHotspot[];
+    recommendations: string[];
+}
+export interface ComplexityHotspot {
+    file: string;
+    function: string;
+    line: number;
+    complexity: number;
+    type: 'cyclomatic' | 'cognitive' | 'nesting';
+    suggestion: string;
 }
 export interface CacheEntry<T> {
     key: string;
@@ -131,14 +249,33 @@ export interface CacheEntry<T> {
     ttl: number;
     similarity?: number;
 }
-export interface MastroConfig {
-    ai: {
-        provider: 'openai' | 'anthropic' | 'local';
-        apiKey?: string;
-        model: string;
-        maxTokens: number;
-        temperature: number;
+export interface AIConfig {
+    provider: 'openai' | 'anthropic' | 'local';
+    apiKey?: string;
+    model: string;
+    maxTokens: number;
+    temperature: number;
+    anthropic?: {
+        version?: string;
+        beta?: string[];
+        toolUse?: boolean;
+        caching?: boolean;
     };
+    openai?: {
+        organization?: string;
+        project?: string;
+        responseFormat?: 'text' | 'json_object';
+        seed?: number;
+    };
+    retry?: {
+        maxRetries: number;
+        backoffMultiplier: number;
+        maxBackoffSeconds: number;
+    };
+    timeout?: number;
+}
+export interface MastroConfig {
+    ai: AIConfig;
     git: {
         defaultBranch: string;
         includeUntracked: boolean;
@@ -156,7 +293,7 @@ export interface MastroConfig {
         interactive: boolean;
     };
 }
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'success' | 'dim';
 export type ChangeType = 'feat' | 'fix' | 'docs' | 'style' | 'refactor' | 'test' | 'chore';
 export interface SemanticChange {
     type: ChangeType;
@@ -442,12 +579,17 @@ export interface DocumentationSection {
     subsections?: DocumentationSection[];
 }
 export interface MermaidDiagram {
-    type: 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 'journey';
+    type: 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 'journey' | 'gitgraph' | 'mindmap' | 'timeline' | 'block' | 'gantt';
     title: string;
     content: string;
     description: string;
+    metadata?: {
+        direction?: 'TD' | 'TB' | 'BT' | 'RL' | 'LR';
+        theme?: 'default' | 'dark' | 'forest' | 'neutral';
+        config?: Record<string, any>;
+    };
 }
-export type DocumentationType = 'api' | 'architecture' | 'user-guide' | 'readme' | 'component' | 'deployment';
+export type DocumentationType = 'api' | 'architecture' | 'user-guide' | 'readme' | 'component' | 'deployment' | 'troubleshooting' | 'changelog' | 'contributing' | 'security' | 'performance' | 'testing' | 'workflow' | 'integration' | 'all';
 export interface DocumentationTemplate {
     type: DocumentationType;
     name: string;

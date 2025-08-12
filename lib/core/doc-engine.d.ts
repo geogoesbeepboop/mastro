@@ -20,5 +20,30 @@ export declare class DocumentationEngine {
     private extractArchitectureReferences;
     private extractUserGuideReferences;
     private extractComponentReferences;
+    private generateTroubleshootingDocumentation;
+    private generateChangelogDocumentation;
+    private generateContributingDocumentation;
+    private generateSecurityDocumentation;
+    private generatePerformanceDocumentation;
+    private generateTestingDocumentation;
+    private generateContributingDiagrams;
+    private generatePerformanceDiagrams;
+    private generateTestingDiagrams;
+    private generateGitWorkflowDiagram;
+    private generatePerformanceTimelineDiagram;
+    private generateTestingMindmapDiagram;
+    private extractTroubleshootingReferences;
+    private extractContributingReferences;
+    private extractSecurityReferences;
+    private extractPerformanceReferences;
+    private extractTestingReferences;
+    private generateWorkflowDocumentation;
+    private generateIntegrationDocumentation;
+    private generateAllDocumentation;
+    private generateWorkflowDiagrams;
+    private generateMastroFlowDiagram;
+    private generateWorkflowSequenceDiagram;
+    private extractWorkflowReferences;
+    private extractIntegrationReferences;
 }
 //# sourceMappingURL=doc-engine.d.ts.map

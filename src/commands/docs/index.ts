@@ -94,7 +94,16 @@ export default class DocsIndex extends BaseCommand {
           'user-guide': 'default-guide-template',
           'readme': 'default-readme-template',
           'component': 'default-component-template',
-          'deployment': 'default-deployment-template'
+          'deployment': 'default-deployment-template',
+          'troubleshooting': 'default-troubleshooting-template',
+          'changelog': 'default-changelog-template',
+          'contributing': 'default-contributing-template',
+          'security': 'default-security-template',
+          'performance': 'default-performance-template',
+          'testing': 'default-testing-template',
+          'workflow': 'default-workflow-template',
+          'integration': 'default-integration-template',
+          'all': 'default-all-template'
         },
         includePrivate: flags['include-private'],
         includeTodos: flags['include-todos'],

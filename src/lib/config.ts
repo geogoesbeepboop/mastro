@@ -145,11 +145,23 @@ export class ConfigManager {
   }
 
   private getDefaultConfig(): MastroConfig {
+    const provider = process.env.MASTRO_AI_PROVIDER as 'openai' | 'anthropic' | 'local' || 'openai';
+    const getDefaultApiKey = () => {
+      if (provider === 'anthropic') return process.env.ANTHROPIC_API_KEY;
+      if (provider === 'openai') return process.env.OPENAI_API_KEY;
+      return undefined;
+    };
+    const getDefaultModel = () => {
+      if (provider === 'anthropic') return 'claude-sonnet-4-0';
+      if (provider === 'openai') return 'gpt-4o-mini';
+      return 'gpt-4o-mini';
+    };
+
     return {
       ai: {
-        provider: 'openai',
-        apiKey: process.env.OPENAI_API_KEY,
-        model: 'gpt-4o-mini',
+        provider,
+        apiKey: getDefaultApiKey(),
+        model: getDefaultModel(),
         maxTokens: 1000,
         temperature: 0.3
       },
@@ -228,6 +240,13 @@ export class ConfigManager {
       envConfig.ai = {
         ...envConfig.ai || config.ai,
         apiKey: process.env.OPENAI_API_KEY
+      };
+    }
+
+    if (process.env.ANTHROPIC_API_KEY) {
+      envConfig.ai = {
+        ...envConfig.ai || config.ai,
+        apiKey: process.env.ANTHROPIC_API_KEY
       };
     }
 

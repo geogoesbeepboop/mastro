@@ -241,7 +241,11 @@ export class UIRenderer {
     if (review.compliments.length > 0) {
       output.push(chalk.green.bold('👏 Good Practices'));
       review.compliments.forEach(compliment => {
-        output.push(`  ${chalk.green('•')} ${compliment}`);
+        const complimentText = typeof compliment === 'string' ? compliment : 
+          (typeof compliment === 'object' && compliment !== null) ? 
+            ((compliment as any).message || (compliment as any).text || (compliment as any).content || JSON.stringify(compliment)) :
+            String(compliment);
+        output.push(`  ${chalk.green('•')} ${complimentText}`);
       });
     }
 

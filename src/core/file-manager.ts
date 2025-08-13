@@ -332,4 +332,44 @@ export class FileSystemManager {
   setOutputDirectory(directory: string): void {
     this.outputDirectory = directory;
   }
+
+  // Methods needed by AutoDocumentationUpdater
+  async documentExists(docType: string): Promise<boolean> {
+    const filePath = this.getDocumentPath(docType);
+    return existsSync(filePath);
+  }
+
+  async readExistingDocument(docType: string): Promise<string | null> {
+    const filePath = this.getDocumentPath(docType);
+    
+    if (!existsSync(filePath)) {
+      return null;
+    }
+    
+    try {
+      return readFileSync(filePath, 'utf-8');
+    } catch (error) {
+      return null;
+    }
+  }
+
+  private getDocumentPath(docType: string): string {
+    const fileNames: Record<string, string> = {
+      'api': 'api.md',
+      'architecture': 'architecture.md',
+      'user-guide': 'user-guide.md',
+      'readme': 'README.md',
+      'component': 'components.md',
+      'deployment': 'deployment.md',
+      'troubleshooting': 'TROUBLESHOOTING.md',
+      'changelog': 'CHANGELOG.md',
+      'contributing': 'CONTRIBUTING.md',
+      'security': 'SECURITY.md',
+      'performance': 'PERFORMANCE.md',
+      'testing': 'TESTING.md'
+    };
+    
+    const fileName = fileNames[docType] || `${docType}.md`;
+    return join(this.outputDirectory, fileName);
+  }
 }

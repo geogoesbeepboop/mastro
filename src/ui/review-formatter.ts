@@ -115,7 +115,11 @@ export class ReviewFormatter {
       output.push(chalk.green.bold('👏 Great Work'));
       output.push(chalk.gray('─'.repeat(20)));
       for (const compliment of review.compliments) {
-        output.push(chalk.green(`✓ ${compliment}`));
+        const complimentText = typeof compliment === 'string' ? compliment : 
+          (typeof compliment === 'object' && compliment !== null) ? 
+            ((compliment as any).message || (compliment as any).text || (compliment as any).content || JSON.stringify(compliment)) :
+            String(compliment);
+        output.push(chalk.green(`✓ ${complimentText}`));
       }
       output.push('');
     }
@@ -342,7 +346,11 @@ export class ReviewFormatter {
     if (review.compliments.length > 0) {
       output.push('## 👏 Great Work\n');
       for (const compliment of review.compliments) {
-        output.push(`- ✅ ${compliment}`);
+        const complimentText = typeof compliment === 'string' ? compliment : 
+          (typeof compliment === 'object' && compliment !== null) ? 
+            ((compliment as any).message || (compliment as any).text || (compliment as any).content || JSON.stringify(compliment)) :
+            String(compliment);
+        output.push(`- ✅ ${complimentText}`);
       }
       output.push('');
     }

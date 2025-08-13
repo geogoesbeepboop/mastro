@@ -1,0 +1,52 @@
+{
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "maxTokens": 3000,
+    "temperature": 0.3
+  },
+  "git": {
+    "defaultBranch": "main",
+    "includeUntracked": false,
+    "maxDiffSize": 10000
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "maxSize": 1000
+  },
+  "team": {
+    "commitStyle": "conventional",
+    "prefixes": [
+      "feat",
+      "fix",
+      "docs",
+      "style",
+      "refactor",
+      "test",
+      "chore"
+    ],
+    "maxLength": 72,
+    "commonPhrases": [
+      "update",
+      "add",
+      "remove",
+      "fix",
+      "improve"
+    ],
+    "reviewPersona": {
+      "name": "Senior Engineer",
+      "focus": [
+        "maintainability",
+        "performance"
+      ],
+      "strictness": "moderate",
+      "customRules": []
+    }
+  },
+  "ui": {
+    "spinner": true,
+    "colors": true,
+    "interactive": true
+  }
+}

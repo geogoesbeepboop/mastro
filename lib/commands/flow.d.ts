@@ -33,6 +33,7 @@ export default class Flow extends BaseCommand {
     private handleReviewDeclined;
     private commitBoundary;
     private generateDocumentation;
+    private generateWorkflowDocumentation;
     private getGeneratedDocFiles;
     private createPullRequest;
     private trackWorkflowAnalytics;

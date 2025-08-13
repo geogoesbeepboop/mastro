@@ -1,0 +1,64 @@
+{
+  "sessions": [
+    {
+      "sessionId": "b3a34dc4-02ea-42a3-9369-591254885a3f",
+      "timestamp": "2025-08-11T02:47:51.413Z",
+      "duration": 0,
+      "productivity": {
+        "linesPerMinute": 0,
+        "filesModifiedPerHour": 0,
+        "commitFrequency": 0,
+        "refactoringRatio": 0,
+        "velocityScore": 0,
+        "peakHours": [],
+        "optimalSessionLength": 60
+      },
+      "focus": {
+        "focusScore": 100,
+        "distractionEvents": 0,
+        "deepWorkSessions": 0,
+        "contextSwitchFrequency": 0,
+        "focusSessionLength": 0
+      },
+      "patterns": [],
+      "quality": {
+        "testCoverageIncrease": 0,
+        "codeComplexityTrend": "stable",
+        "documentationRatio": 0,
+        "refactoringEfficiency": 0,
+        "bugFixRatio": 0
+      },
+      "testingSuggestions": []
+    },
+    {
+      "sessionId": "22c56d3d-554b-4f31-8776-8ce591d71442",
+      "timestamp": "2025-08-12T04:33:14.680Z",
+      "duration": 0,
+      "productivity": {
+        "linesPerMinute": 0,
+        "filesModifiedPerHour": 0,
+        "commitFrequency": 0,
+        "refactoringRatio": 0,
+        "velocityScore": 0,
+        "peakHours": [],
+        "optimalSessionLength": 60
+      },
+      "focus": {
+        "focusScore": 100,
+        "distractionEvents": 0,
+        "deepWorkSessions": 0,
+        "contextSwitchFrequency": 0,
+        "focusSessionLength": 0
+      },
+      "patterns": [],
+      "quality": {
+        "testCoverageIncrease": 0,
+        "codeComplexityTrend": "stable",
+        "documentationRatio": 0,
+        "refactoringEfficiency": 0,
+        "bugFixRatio": 0
+      },
+      "testingSuggestions": []
+    }
+  ]
+}
